@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { Header } from "@/components/layout/header";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ToastProvider } from "@/components/providers/toast-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,9 +19,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body className="min-h-dvh bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-50">
-        {children}
+        <ThemeProvider>
+          <ToastProvider>
+            <Header />
+            {children}
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

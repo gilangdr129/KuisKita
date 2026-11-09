@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { ok } from "@/lib/http/response";
 
-export async function GET() {
-  return NextResponse.json({
+/** Endpoint kesehatan: memverifikasi envelope API + request_id (Gate F2). */
+export async function GET(request: Request) {
+  return ok(request, {
     status: "ok",
     service: "kuiskita",
-    phase: "F0",
+    phase: "F2",
     time: new Date().toISOString(),
   });
 }
