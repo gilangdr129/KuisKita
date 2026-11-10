@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TurnstileField } from "@/components/auth/turnstile-field";
-import { readError, type EnvelopeError } from "@/lib/http/client";
+import { readData, readError, type EnvelopeError } from "@/lib/http/client";
 import { signUpSchema, type SignUpInput } from "@/lib/validation/schemas";
 
 type Props = {
@@ -38,6 +38,17 @@ export function DaftarForm({ next = "/" }: Props) {
     });
 
     if (response.ok) {
+      // Tanpa verifikasi email (Confirm email nonaktif), sesi langsung dibuat —
+      // lanjut ke tujuan. Kalau verifikasi wajib, arahkan ke halaman masuk
+      // dengan pesan "periksa email".
+      const payload = await readData<{ session_aktif?: boolean; needs_email_verification?: boolean }>(
+        response,
+      );
+      if (payload?.session_aktif) {
+        router.push(next);
+        router.refresh();
+        return;
+      }
       router.push(`/masuk?status=periksa_email&next=${encodeURIComponent(next)}`);
       router.refresh();
       return;

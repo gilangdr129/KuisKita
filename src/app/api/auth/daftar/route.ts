@@ -61,6 +61,9 @@ export async function POST(request: Request) {
       id: data.user?.id,
       email: data.user?.email,
       needs_email_verification: !data.user?.email_confirmed_at,
+      // Supabase langsung membuat sesi bila verifikasi email tidak diwajibkan
+      // (setelan "Confirm email" di dashboard bisa berubah kapan saja).
+      session_aktif: Boolean(data.session),
     },
     { status: 201 },
   );

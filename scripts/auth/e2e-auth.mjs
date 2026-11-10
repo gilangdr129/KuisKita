@@ -134,6 +134,7 @@ async function admin(path, options = {}) {
 }
 
 let createdUserId = null;
+let sesiLangsung = false;
 
 try {
   // ---------------------------------------------------------------- daftar
@@ -145,6 +146,10 @@ try {
   if (daftar.status === 201 && daftar.json?.data?.id) {
     report("daftar akun baru (endpoint publik)", true, `status 201, email ${email}`);
     createdUserId = daftar.json.data.id;
+    sesiLangsung = Boolean(daftar.json.data.session_aktif);
+    if (sesiLangsung) {
+      report("sesi dibuat langsung saat daftar", true, "Confirm email nonaktif di project");
+    }
   } else if (daftar.json?.error?.message?.includes("rate limit")) {
     report(
       "daftar akun baru (endpoint publik)",
@@ -174,48 +179,80 @@ try {
 
   // ------------------------------------------- email belum terkonfirmasi
   const userBefore = await admin(`/auth/v1/admin/users/${createdUserId}`);
-  report(
-    "email_confirmed_at masih null sebelum verifikasi",
-    userBefore.json?.email_confirmed_at == null,
-    String(userBefore.json?.email_confirmed_at),
-  );
+  if (sesiLangsung) {
+    report(
+      "email_confirmed_at terisi saat daftar",
+      Boolean(userBefore.json?.email_confirmed_at),
+      "Confirm email nonaktif di project (setelan valid untuk MVP awal)",
+    );
+  } else {
+    report(
+      "email_confirmed_at masih null sebelum verifikasi",
+      userBefore.json?.email_confirmed_at == null,
+      String(userBefore.json?.email_confirmed_at),
+    );
+  }
 
   // ------------------------------------------- masuk ditolak sebelum verifikasi
   const masukAwal = await api("/api/auth/masuk", { method: "POST", body: { email, password } });
-  report(
-    "masuk ditolak sebelum verifikasi (403 EMAIL_NOT_CONFIRMED)",
-    masukAwal.status === 403 && masukAwal.json?.error?.code === "EMAIL_NOT_CONFIRMED",
-    `status ${masukAwal.status}, ${masukAwal.json?.error?.code ?? ""}`,
-  );
+  if (sesiLangsung) {
+    report(
+      "masuk sebelum verifikasi (ditolak 403)",
+      "SKIP",
+      "tidak berlaku: Confirm email nonaktif, akun langsung aktif",
+    );
+  } else {
+    report(
+      "masuk ditolak sebelum verifikasi (403 EMAIL_NOT_CONFIRMED)",
+      masukAwal.status === 403 && masukAwal.json?.error?.code === "EMAIL_NOT_CONFIRMED",
+      `status ${masukAwal.status}, ${masukAwal.json?.error?.code ?? ""}`,
+    );
+  }
 
   // ---------------------------------------------------- verifikasi via tautan
-  const link = await admin("/auth/v1/admin/generate_link", {
-    method: "POST",
-    body: { type: "signup", email, password, options: { redirect_to: `${BASE_URL}/auth/callback?next=/` } },
-  });
-  report(
-    "tautan verifikasi dibuat (admin generateLink)",
-    link.status === 200 && Boolean(link.json?.action_link),
-    link.json?.action_link?.split("?")[0] ?? "—",
-  );
+  if (sesiLangsung) {
+    report(
+      "tautan verifikasi dibuat (admin generateLink)",
+      "SKIP",
+      "akun sudah terkonfirmasi sejak pendaftaran (Confirm email nonaktif)",
+    );
+    report("tautan verifikasi mendarat di aplikasi", "SKIP", "tidak diperlukan untuk konfigurasi ini");
+    report(
+      "email terkonfirmasi setelah tautan dibuka",
+      "SKIP",
+      "sudah terkonfirmasi sejak awal — tercatat pada langkah sebelumnya",
+    );
+  } else {
+    const link = await admin("/auth/v1/admin/generate_link", {
+      method: "POST",
+      body: { type: "signup", email, password, options: { redirect_to: `${BASE_URL}/auth/callback?next=/` } },
+    });
+    report(
+      "tautan verifikasi dibuat (admin generateLink)",
+      link.status === 200 && Boolean(link.json?.action_link),
+      link.json?.action_link?.split("?")[0] ?? "—",
+    );
 
-  const verifyLanding = await follow(link.json.action_link, { jar: createJar() });
-  const verifyUrl = new URL(verifyLanding.url);
-  const verifyFragment = new URLSearchParams(verifyUrl.hash.replace(/^#/, ""));
-  const verifyIsCode = Boolean(verifyUrl.searchParams.get("code"));
-  const verifyIsImplicit = Boolean(verifyFragment.get("access_token"));
-  report(
-    "tautan verifikasi mendarat di aplikasi (PKCE ?code atau token fragment)",
-    verifyLanding.url.startsWith(BASE_URL) && (verifyIsCode || verifyIsImplicit),
-    `${verifyIsCode ? "PKCE code" : "implicit token"} di ${verifyUrl.pathname}`,
-  );
+    if (link.json?.action_link) {
+      const verifyLanding = await follow(link.json.action_link, { jar: createJar() });
+      const verifyUrl = new URL(verifyLanding.url);
+      const verifyFragment = new URLSearchParams(verifyUrl.hash.replace(/^#/, ""));
+      const verifyIsCode = Boolean(verifyUrl.searchParams.get("code"));
+      const verifyIsImplicit = Boolean(verifyFragment.get("access_token"));
+      report(
+        "tautan verifikasi mendarat di aplikasi (PKCE ?code atau token fragment)",
+        verifyLanding.url.startsWith(BASE_URL) && (verifyIsCode || verifyIsImplicit),
+        `${verifyIsCode ? "PKCE code" : "implicit token"} di ${verifyUrl.pathname}`,
+      );
+    }
 
-  const userAfter = await admin(`/auth/v1/admin/users/${createdUserId}`);
-  report(
-    "email terkonfirmasi setelah tautan dibuka",
-    Boolean(userAfter.json?.email_confirmed_at),
-    String(userAfter.json?.email_confirmed_at ?? "null"),
-  );
+    const userAfter = await admin(`/auth/v1/admin/users/${createdUserId}`);
+    report(
+      "email terkonfirmasi setelah tautan dibuka",
+      Boolean(userAfter.json?.email_confirmed_at),
+      String(userAfter.json?.email_confirmed_at ?? "null"),
+    );
+  }
 
   // ------------------------------------------------------------ masuk (sesi)
   const sessionJar = createJar();
