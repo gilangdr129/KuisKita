@@ -96,3 +96,10 @@ export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
+
+/** Ubah username sendiri (avatar menyusul di F5). */
+export const updateUsernameSchema = z.object({
+  username: usernameSchema,
+});
+
+export type UpdateUsernameInput = z.infer<typeof updateUsernameSchema>;

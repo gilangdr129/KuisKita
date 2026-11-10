@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { ProfilForm } from "@/components/auth/profil-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createUserClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Profil",
 };
+
+function formatTanggal(iso: string | null) {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat("id-ID", { dateStyle: "long" }).format(new Date(iso));
+}
 
 export default async function ProfilPage() {
   const supabase = await createUserClient();
@@ -20,12 +26,12 @@ export default async function ProfilPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, avatar_url, role")
+    .select("username, avatar_url, role, created_at")
     .eq("id", user.id)
     .single();
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-col px-4 py-12">
+    <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-12">
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Profil Anda</CardTitle>
@@ -45,16 +51,32 @@ export default async function ProfilPage() {
             <span className="font-medium">{profile?.role ?? "player"}</span>
           </div>
           <div className="flex justify-between gap-4">
+            <span className="text-slate-500 dark:text-slate-400">Bergabung</span>
+            <span className="font-medium">{formatTanggal(profile?.created_at ?? null)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
             <span className="text-slate-500 dark:text-slate-400">Status email</span>
             <span className="font-medium">
               {user.email_confirmed_at ? "Terverifikasi" : "Belum diverifikasi"}
             </span>
           </div>
         </CardContent>
-        <div className="mt-4">
-          <LogoutButton />
-        </div>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ubah username</CardTitle>
+          <CardDescription>
+            Username tampil di papan peringkat. Gunakan 3-20 karakter: huruf kecil, angka, titik,
+            underscore.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ProfilForm usernameSekarang={profile?.username ?? ""} />
+        </CardContent>
+      </Card>
+
+      <LogoutButton />
     </main>
   );
 }

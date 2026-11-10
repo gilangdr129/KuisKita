@@ -90,6 +90,9 @@ union all
 select 'question_keys: tanpa policy klien',
        not exists (select 1 from pg_policies g where g.schemaname = 'public' and g.tablename = 'question_keys')
 union all
+select 'grant: authenticated select kolom profiles.id',
+       has_column_privilege('authenticated', 'public.profiles', 'id', 'select')
+union all
 select 'grant: anon tanpa select question_keys',
        not has_table_privilege('anon', 'public.question_keys', 'select')
 union all

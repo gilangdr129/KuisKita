@@ -15,6 +15,7 @@
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "e2e:auth": "node scripts/auth/e2e-auth.mjs",
+    "e2e:profil": "node scripts/auth/e2e-profil.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {

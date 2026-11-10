@@ -30,6 +30,13 @@ export function mapAuthError(error: unknown): { status: number; code: string; me
   if (lower.includes("invalid login credentials")) {
     return { status: 401, code: "INVALID_CREDENTIALS", message: "Email atau password salah." };
   }
+  if (lower.includes("provider is not enabled") || lower.includes("unsupported provider")) {
+    return {
+      status: 503,
+      code: "PROVIDER_NOT_CONFIGURED",
+      message: "Masuk dengan Google belum dikonfigurasi. Hubungi admin KuisKita.",
+    };
+  }
   if (lower.includes("session") || lower.includes("jwt")) {
     return { status: 401, code: "SESSION_REQUIRED", message: "Sesi tidak valid. Ulangi prosesnya." };
   }

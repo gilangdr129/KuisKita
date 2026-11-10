@@ -52,12 +52,13 @@ const TRIGGERS = [
 ];
 
 describe("migrasi F1", () => {
-  it("memuat berkas migrasi F1-F3 berurutan", () => {
+  it("memuat berkas migrasi F1-F4 berurutan", () => {
     expect(files.length).toBeGreaterThanOrEqual(3);
     expect(files[0]).toContain("schema");
     expect(files[1]).toContain("triggers");
     expect(files[2]).toContain("seed_categories");
     expect(files.some((name) => name.includes("username_from_metadata"))).toBe(true);
+    expect(files.some((name) => name.includes("oauth_username"))).toBe(true);
   });
 
   it("membuat seluruh 10 tabel", () => {
