@@ -13,7 +13,9 @@
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "db:verify": "node scripts/db/verify-schema.mjs",
     "db:push": "supabase db push",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "e2e:auth": "node scripts/auth/e2e-auth.mjs",
+    "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.5",

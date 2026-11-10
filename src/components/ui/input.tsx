@@ -5,7 +5,7 @@ export type InputProps = {
   label: string;
   error?: string;
   hint?: string;
-} & React.ComponentPropsWithoutRef<"input">;
+} & React.ComponentPropsWithRef<"input">;
 
 /** Input form dengan label, pesan kesalahan, dan tautan aria yang benar. */
 export function Input({ label, error, hint, className, id, ...props }: InputProps) {

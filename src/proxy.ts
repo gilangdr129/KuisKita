@@ -3,7 +3,7 @@ import { copySessionCookies, fail } from "@/lib/http/response";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /** Halaman yang butuh login (PRD §7). Publik = sisanya. */
-const PROTECTED_PAGES = ["/profil", "/riwayat", "/dasbor", "/admin"] as const;
+const PROTECTED_PAGES = ["/profil", "/riwayat", "/dasbor", "/admin", "/perbarui-sandi"] as const;
 
 /** Endpoint API yang butuh login. Sisanya di /api diasumsikan publik
  *  (saat ini: /api/quizzes, /api/health, /api/cron). */
@@ -31,7 +31,10 @@ function isPublicApiNoSession(pathname: string) {
   );
 }
 
-export async function middleware(request: NextRequest) {
+/**
+ * Proxy Next.js 16 (pengganti middleware.ts) — guard route + refresh sesi.
+ */
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicApiNoSession(pathname)) {

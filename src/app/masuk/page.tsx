@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Suspense } from "react";
+import { MasukForm } from "@/components/auth/masuk-form";
 
 export const metadata: Metadata = {
   title: "Masuk",
@@ -8,21 +8,16 @@ export const metadata: Metadata = {
 
 export default function MasukPage() {
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-col px-4 py-16">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Masuk ke KuisKita</CardTitle>
-          <CardDescription>
-            Halaman masuk lengkap (email, Google, magic link) dibangun di Fase 3. Halaman ini
-            sementara untuk memastikan pengalihan route terproteksi berjalan benar.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button href="/" variant="secondary">
-            Kembali ke beranda
-          </Button>
-        </CardFooter>
-      </Card>
+    <main className="mx-auto flex w-full max-w-sm flex-col px-4 py-12">
+      <Suspense fallback={null}>
+        <MasukForm />
+      </Suspense>
+      <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
+        Belum punya akun?{" "}
+        <a href="/daftar" className="font-medium text-teal-700 underline dark:text-teal-300">
+          Daftar gratis
+        </a>
+      </p>
     </main>
   );
 }

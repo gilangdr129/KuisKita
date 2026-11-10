@@ -53,3 +53,46 @@ export const quizFiltersSchema = paginationSchema.extend({
 });
 
 export type QuizFilters = z.infer<typeof quizFiltersSchema>;
+
+// ============================================================
+// Skema auth (F3)
+// ============================================================
+
+export const signUpSchema = z
+  .object({
+    email: emailSchema,
+    username: usernameSchema,
+    password: passwordSchema,
+    konfirmasi: z.string(),
+    turnstile_token: z.string().optional(),
+  })
+  .refine((data) => data.password === data.konfirmasi, {
+    message: "Konfirmasi password tidak sama",
+    path: ["konfirmasi"],
+  });
+
+export const signInSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Password wajib diisi"),
+  turnstile_token: z.string().optional(),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+  turnstile_token: z.string().optional(),
+});
+
+export const updatePasswordSchema = z
+  .object({
+    password: passwordSchema,
+    konfirmasi: z.string(),
+  })
+  .refine((data) => data.password === data.konfirmasi, {
+    message: "Konfirmasi password tidak sama",
+    path: ["konfirmasi"],
+  });
+
+export type SignUpInput = z.infer<typeof signUpSchema>;
+export type SignInInput = z.infer<typeof signInSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
