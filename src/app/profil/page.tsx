@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { ProfilForm } from "@/components/auth/profil-form";
+import { AvatarUpload } from "@/components/profil/avatar-upload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createUserClient } from "@/lib/supabase/server";
 
@@ -68,11 +69,21 @@ export default async function ProfilPage() {
           <CardTitle className="text-base">Ubah username</CardTitle>
           <CardDescription>
             Username tampil di papan peringkat. Gunakan 3-20 karakter: huruf kecil, angka, titik,
-            underscore.
+            underscore. Nama sama dengan beda kapital tetap dianggap kembar.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ProfilForm usernameSekarang={profile?.username ?? ""} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Avatar</CardTitle>
+          <CardDescription>Gambar ini tampil di papan peringkat dan daftar kuis.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AvatarUpload avatarUrl={profile?.avatar_url ?? null} />
         </CardContent>
       </Card>
 

@@ -130,6 +130,25 @@ union all
 select 'ekstensi: pg_trgm aktif',
        exists (select 1 from pg_extension where extname = 'pg_trgm')
 union all
+select 'storage: bucket media-kuis publik + batas 2 MB',
+       (select count(*) from storage.buckets
+         where id = 'media-kuis' and public = true and file_size_limit = 2097152) = 1
+union all
+select 'storage: policy baca publik',
+       exists (select 1 from pg_policies
+                where schemaname = 'storage' and tablename = 'objects'
+                  and policyname = 'media_baca_publik')
+union all
+select 'storage: policy tulis milik sendiri',
+       exists (select 1 from pg_policies
+                where schemaname = 'storage' and tablename = 'objects'
+                  and policyname = 'media_tulis_milik_sendiri')
+union all
+select 'storage: policy hapus milik sendiri',
+       exists (select 1 from pg_policies
+                where schemaname = 'storage' and tablename = 'objects'
+                  and policyname = 'media_hapus_milik_sendiri')
+union all
 select 'seed: minimal 10 kategori terisi',
        (select count(*) from public.categories) >= 10
 order by check_name;

@@ -59,6 +59,7 @@ describe("migrasi F1", () => {
     expect(files[2]).toContain("seed_categories");
     expect(files.some((name) => name.includes("username_from_metadata"))).toBe(true);
     expect(files.some((name) => name.includes("oauth_username"))).toBe(true);
+    expect(files.some((name) => name.includes("storage_media_bucket"))).toBe(true);
   });
 
   it("membuat seluruh 10 tabel", () => {
