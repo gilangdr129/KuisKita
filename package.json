@@ -12,11 +12,13 @@
     "test:watch": "vitest",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "db:verify": "node scripts/db/verify-schema.mjs",
+    "db:seed": "node scripts/db/seed-quiz.mjs",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "e2e:auth": "node scripts/auth/e2e-auth.mjs",
     "e2e:profil": "node scripts/auth/e2e-profil.mjs",
     "e2e:upload": "node scripts/auth/e2e-upload.mjs",
+    "e2e:detail": "node scripts/auth/e2e-detail.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {
