@@ -36,7 +36,8 @@ indexes_expected(name) as (
          ('questions_quiz_urutan_idx'),('attempts_active_unique'),
          ('attempts_user_started_idx'),('attempts_quiz_score_idx'),
          ('attempt_answers_attempt_idx'),('audit_logs_created_idx'),
-         ('quizzes_judul_trgm_idx')
+         ('quizzes_judul_trgm_idx'),
+         ('quizzes_deskripsi_trgm_idx')
 ),
 policies_expected(t, p) as (
   values

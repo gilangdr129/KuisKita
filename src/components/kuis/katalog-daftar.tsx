@@ -90,6 +90,9 @@ export function KatalogDaftar({ itemsAwal, hasMoreAwal, cursorAwal }: Props) {
           value={q}
           label="Cari kuis"
           placeholder="Judul atau deskripsi…"
+          maxLength={100}
+          minLength={1}
+          hint="Maksimal 100 karakter"
           onChange={(event) => setParam("q", event.target.value)}
         />
         <label className="flex flex-col gap-1 text-sm">

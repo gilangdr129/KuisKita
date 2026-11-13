@@ -209,10 +209,14 @@ try {
     `${(cariJudulQ.data.items ?? []).length} hasil`,
   );
 
-  // halaman > batas → kosong (kursor = string JSON di masa lalu)
+  // halaman > batas → kosong (kursor = string JSON di masa lalu, relevansi 0)
   const jauh = await kueri({
     limit: 20,
-    cursor: JSON.stringify({ t: "2000-01-01T00:00:00Z", i: "00000000-0000-0000-0000-000000000000" }),
+    cursor: JSON.stringify({
+      r: 0,
+      t: "2000-01-01T00:00:00Z",
+      i: "00000000-0000-0000-0000-000000000000",
+    }),
   });
   report(
     "halaman > batas → kosong (has_more false)",
@@ -243,6 +247,56 @@ try {
   report("limit > 50 → 400 VALIDATION_ERROR", limitJelek.status === 400, `status ${limitJelek.status}`);
   const sortirJelek = await kueri({ sortir: "sesuatu" });
   report("sortir tidak dikenal → 400 VALIDATION_ERROR", sortirJelek.status === 400, `status ${sortirJelek.status}`);
+
+  // ------------------------------------------------ relevansi pencarian
+  const relevan = await kueri({ q: "Cenderawasih" });
+  const relevanJudul = (relevan.data.items ?? [])[0]?.judul;
+  report(
+    "pencarian 'Cenderawasih' (kata hanya di soal, bukan judul) → 0 hasil tanpa error",
+    relevan.status === 200 && (relevan.data.items ?? []).length === 0,
+    `${(relevan.data.items ?? []).length} hasil`,
+  );
+
+  const relevanJudul2 = await kueri({ q: "Populer" });
+  const itemTeratas = relevanJudul2.data.items?.[0];
+  report(
+    "pencarian 'Populer' → kuis pas menduduki peringkat teratas",
+    relevanJudul2.status === 200 && itemTeratas?.judul === "Kuis Populer Uji",
+    `teratas: ${itemTeratas?.judul} (relevansi ${itemTeratas?.relevansi})`,
+  );
+
+  // ------------------------------------------------ abuse input (aman)
+  const abuse = [
+    "'; DROP TABLE quizzes;--",
+    "' OR 1=1 --",
+    "%",
+    "%%%_",
+    "<script>alert(1)</script>",
+    "\\",
+  ];
+  let abuseAman = true;
+  const detailAbuse = [];
+  for (const pola of abuse) {
+    const res = await kueri({ q: pola });
+    if (res.status !== 200) {
+      abuseAman = false;
+      detailAbuse.push(`${pola.slice(0, 20)} → ${res.status}`);
+    }
+  }
+  report(
+    "input abuse (SQLi/wildcard/escape) → selalu 200 tanpa error",
+    abuseAman,
+    abuseAman ? `${abuse.length} pola diuji` : detailAbuse.join("; "),
+  );
+
+  // tabel masih ada & katalog masih berfungsi setelah abuse
+  const sesudahAbuse = await kueri({ limit: 5 });
+  const kolom = sesudahAbuse.data.items?.[0];
+  report(
+    "katalog tetap utuh setelah abuse (parameterized, tanpa dampak skema)",
+    sesudahAbuse.status === 200 && (sesudahAbuse.data.items ?? []).length > 0 && Boolean(kolom?.judul),
+    `${(sesudahAbuse.data.items ?? []).length} item`,
+  );
 } catch (error) {
   report("eksekusi e2e katalog", false, error instanceof Error ? error.message : String(error));
 } finally {
