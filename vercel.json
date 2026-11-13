@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/keep-alive",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/expire-attempts",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

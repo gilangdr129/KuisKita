@@ -20,6 +20,8 @@ export type ApiError = {
     code: string;
     message: string;
     request_id: string;
+    /** Data tambahan (mis. hasil penilaian pada respons 409 ATTEMPT_EXPIRED). */
+    [key: string]: unknown;
   };
 };
 
@@ -38,10 +40,12 @@ export function fail(
   status: number,
   code: string,
   message: string,
-  init?: ResponseInit,
+  options?: { init?: ResponseInit; extra?: Record<string, unknown> },
 ) {
-  const body: ApiError = { error: { code, message, request_id: getRequestId(request) } };
-  return NextResponse.json(body, { status, ...init });
+  const body: ApiError = {
+    error: { code, message, request_id: getRequestId(request), ...(options?.extra ?? {}) },
+  };
+  return NextResponse.json(body, { status, ...options?.init });
 }
 
 /** Salin cookie sesi dari satu respons ke respons lain (dipakai middleware). */

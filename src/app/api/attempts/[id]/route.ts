@@ -1,7 +1,7 @@
 import { fail, ok } from "@/lib/http/response";
 import { mapRpcError } from "@/lib/attempts/errors";
 import { attemptIdSchema } from "@/lib/validation/schemas";
-import { createUserClient } from "@/lib/supabase/server";
+import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -18,9 +18,18 @@ export async function GET(request: Request, { params }: Props) {
     return fail(request, 400, "VALIDATION_ERROR", "ID percobaan tidak valid.");
   }
 
-  const supabase = await createUserClient();
+  const session = await createUserClient();
+  const {
+    data: { user },
+  } = await session.auth.getUser();
+  if (!user) {
+    return fail(request, 401, "UNAUTHORIZED", "Anda harus masuk untuk melihat percobaan.");
+  }
+
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase.rpc("get_attempt_state", {
     p_attempt_id: validation.data,
+    p_user_id: user.id,
   });
 
   if (error) {

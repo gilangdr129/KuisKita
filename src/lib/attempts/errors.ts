@@ -34,6 +34,11 @@ const RPC_ERRORS: Record<string, { status: number; code: string; message: string
     code: "ATTEMPT_NOT_FOUND",
     message: "Percobaan tidak ditemukan.",
   },
+  ATTEMPT_NOT_SUBMITTED: {
+    status: 403,
+    code: "ATTEMPT_NOT_SUBMITTED",
+    message: "Hasil dan pembahasan hanya tersedia setelah percobaan disubmit.",
+  },
   ATTEMPT_EXPIRED: {
     status: 409,
     code: "ATTEMPT_EXPIRED",

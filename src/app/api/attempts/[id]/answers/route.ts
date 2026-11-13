@@ -2,7 +2,7 @@ import { fail, ok } from "@/lib/http/response";
 import { parseOrFail } from "@/lib/http/validate";
 import { mapRpcError } from "@/lib/attempts/errors";
 import { attemptIdSchema, saveAnswerSchema } from "@/lib/validation/schemas";
-import { createUserClient } from "@/lib/supabase/server";
+import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -12,7 +12,7 @@ type Props = {
  * PUT /api/attempts/:id/answers — simpan satu jawaban (autosave).
  *
  * Validasi kepemilikan, status percobaan, batas waktu server, dan kecocokan
- * opsi↔soal dilakukan di dalam RPC save_attempt_answer (SECURITY DEFINER).
+ * opsi↔soal dilakukan di dalam RPC save_attempt_answer.
  */
 export async function PUT(request: Request, { params }: Props) {
   const { id } = await params;
@@ -25,9 +25,18 @@ export async function PUT(request: Request, { params }: Props) {
   const parsed = parseOrFail(request, saveAnswerSchema, await request.json().catch(() => null));
   if (!parsed.ok) return parsed.response;
 
-  const supabase = await createUserClient();
+  const session = await createUserClient();
+  const {
+    data: { user },
+  } = await session.auth.getUser();
+  if (!user) {
+    return fail(request, 401, "UNAUTHORIZED", "Anda harus masuk untuk menyimpan jawaban.");
+  }
+
+  const supabase = getServiceSupabase();
   const { data, error } = await supabase.rpc("save_attempt_answer", {
     p_attempt_id: attemptValidation.data,
+    p_user_id: user.id,
     p_question_id: parsed.data.pertanyaan_id,
     p_option_id: parsed.data.opsi_id,
   });

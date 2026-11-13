@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +62,7 @@ export function RuangKuis({
   sisaAwal,
 }: Props) {
   const { toast } = useToast();
+  const router = useRouter();
   const [sisa, setSisa] = React.useState(sisaAwal);
   const [indexSoal, setIndexSoal] = React.useState(0);
 
@@ -77,6 +79,35 @@ export function RuangKuis({
   const [jumlahMenunggu, setJumlahMenunggu] = React.useState(0);
   const [statusSimpan, setStatusSimpan] = React.useState<StatusSimpan>("idle");
   const [mengirim, setMengirim] = React.useState(false);
+  const [menSubmit, setMenSubmit] = React.useState(false);
+
+  const onSubmit = async () => {
+    setMenSubmit(true);
+    try {
+      const response = await fetch(`/api/attempts/${attemptId}/submit`, { method: "POST" });
+      // 409 ATTEMPT_EXPIRED tetap membawa hasil penilaian dari autosave —
+      // halaman hasil menampilkannya.
+      if (response.ok || response.status === 409) {
+        router.push(`/percobaan/${attemptId}/hasil`);
+        router.refresh();
+        return;
+      }
+      const error = (await readError(response)) as EnvelopeError | null;
+      toast({
+        title: "Submit gagal",
+        description: error?.error.message ?? "Coba lagi beberapa saat.",
+        variant: "danger",
+      });
+    } catch {
+      toast({
+        title: "Submit gagal",
+        description: "Periksa koneksi Anda, lalu coba lagi.",
+        variant: "danger",
+      });
+    } finally {
+      setMenSubmit(false);
+    }
+  };
 
   // ---------------------------------------------------------------- timer
   // Selisih jam dihitung setelah mount: timer selalu memakai waktu server.
@@ -317,12 +348,8 @@ export function RuangKuis({
         </p>
         <Button
           disabled={adaBelumTersimpan || sisa <= 0}
-          onClick={() =>
-            toast({
-              title: "Submit & penilaian",
-              description: "Tombol submit beserta perhitungan skor hadir di Fase 9.",
-            })
-          }
+          loading={menSubmit}
+          onClick={() => void onSubmit()}
         >
           Submit
         </Button>
