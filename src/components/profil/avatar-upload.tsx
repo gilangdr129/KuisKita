@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { compressImage } from "@/lib/image/compress";
-import { readData, readError, type EnvelopeError } from "@/lib/http/client";
+import { readError, type EnvelopeError } from "@/lib/http/client";
 
 type Props = {
   avatarUrl: string | null;

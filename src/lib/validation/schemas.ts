@@ -113,3 +113,9 @@ export const startAttemptSchema = z.object({
 });
 
 export const attemptIdSchema = uuidSchema;
+
+/** Simpan satu jawaban per soal (autosave). */
+export const saveAnswerSchema = z.object({
+  pertanyaan_id: uuidSchema,
+  opsi_id: uuidSchema,
+});

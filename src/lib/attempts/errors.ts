@@ -34,6 +34,21 @@ const RPC_ERRORS: Record<string, { status: number; code: string; message: string
     code: "ATTEMPT_NOT_FOUND",
     message: "Percobaan tidak ditemukan.",
   },
+  ATTEMPT_EXPIRED: {
+    status: 409,
+    code: "ATTEMPT_EXPIRED",
+    message: "Waktu pengerjaan sudah habis. Jawaban tidak lagi dapat disimpan.",
+  },
+  ATTEMPT_FINAL: {
+    status: 409,
+    code: "ATTEMPT_FINAL",
+    message: "Percobaan ini sudah selesai.",
+  },
+  OPTION_MISMATCH: {
+    status: 400,
+    code: "OPTION_MISMATCH",
+    message: "Opsi tidak cocok dengan soal yang dikerjakan.",
+  },
 };
 
 /** Ekstrak kode error RPC dari pesan Supabase (kode di-inline di pesan). */

@@ -20,6 +20,7 @@
     "e2e:upload": "node scripts/auth/e2e-upload.mjs",
     "e2e:detail": "node scripts/auth/e2e-detail.mjs",
     "e2e:attempt": "node scripts/auth/e2e-attempt.mjs",
+    "e2e:answers": "node scripts/auth/e2e-answers.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {

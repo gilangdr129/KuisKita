@@ -37,9 +37,6 @@ if (!SUPABASE_URL || !ANON_KEY || !SERVICE_KEY || !env.DATABASE_URL) {
   process.exit(0);
 }
 
-const SEED_EMAIL = "creator.kuiskita@example.com";
-const SEED_PASSWORD = "kuiskita-seed-2026";
-
 const results = [];
 function report(name, ok, detail = "") {
   results.push({ name, ok });

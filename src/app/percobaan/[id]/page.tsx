@@ -69,7 +69,9 @@ export default async function RuangKuisPage({ params }: Props) {
   }));
 
   const stateJson = state as {
+    attempt?: Record<string, unknown>;
     acak?: { soal?: string[]; opsi?: Record<string, string[]> };
+    jawaban?: { pertanyaan_id: string; opsi_id: string }[];
     server_now: string;
     sisa_detik: number;
   };
@@ -94,8 +96,10 @@ export default async function RuangKuisPage({ params }: Props) {
         }
       >
         <RuangKuis
+          attemptId={validation.data}
           acak={stateJson.acak ?? {}}
           soal={daftarSoal}
+          jawabanAwal={stateJson.jawaban ?? []}
           expiresAt={String(attempt.expires_at)}
           serverNow={stateJson.server_now}
           sisaAwal={stateJson.sisa_detik}
