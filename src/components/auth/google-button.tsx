@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { readData, readError, type EnvelopeError } from "@/lib/http/client";
@@ -12,7 +11,6 @@ type Props = {
 
 /** Tombol masuk dengan Google: minta URL OAuth lalu alihkan browser. */
 export function GoogleButton({ next = "/" }: Props) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

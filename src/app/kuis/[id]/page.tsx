@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MulaiKontrol } from "@/components/kuis/mulai-kontrol";
 import { createUserClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -87,9 +87,7 @@ export default async function KuisDetailPage({ params }: Props) {
             </CardDescription>
           </div>
           {user ? (
-            <Button disabled title="Ruang kuis hadir di Fase 7">
-              Mulai
-            </Button>
+            <MulaiKontrol quizId={quiz.id} />
           ) : (
             <Button href={`/masuk?next=/kuis/${quiz.id}`}>Masuk untuk mulai</Button>
           )}

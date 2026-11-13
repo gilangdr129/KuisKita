@@ -74,7 +74,6 @@ function createJar() {
 /** GET/POST mengikuti redirect manual agar cookie tiap langkah tercatat. */
 async function follow(url, { method = "GET", body, jar, maxHops = 8 } = {}) {
   let current = new URL(url);
-  let lastResponse;
 
   for (let hop = 0; hop < maxHops; hop += 1) {
     const response = await fetch(current, {
@@ -87,14 +86,13 @@ async function follow(url, { method = "GET", body, jar, maxHops = 8 } = {}) {
       redirect: "manual",
     });
     if (jar) jar.absorb(response.headers);
-    lastResponse = response;
 
     const location = response.headers.get("location");
     if (response.status >= 300 && response.status < 400 && location) {
       current = new URL(location, current);
       continue;
     }
-    return { response, url: current.toString(), jar };
+return { response, url: current.toString(), jar };
   }
   throw new Error(`Terlalu banyak redirect dari ${url}`);
 }

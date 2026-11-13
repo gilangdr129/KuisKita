@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { readData, readError, type EnvelopeError } from "@/lib/http/client";
+import { readError, type EnvelopeError } from "@/lib/http/client";
 import { updateUsernameSchema, type UpdateUsernameInput } from "@/lib/validation/schemas";
 
 type Props = {

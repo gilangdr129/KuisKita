@@ -103,3 +103,13 @@ export const updateUsernameSchema = z.object({
 });
 
 export type UpdateUsernameInput = z.infer<typeof updateUsernameSchema>;
+
+// ============================================================
+// Skema percobaan (F7)
+// ============================================================
+
+export const startAttemptSchema = z.object({
+  quiz_id: uuidSchema,
+});
+
+export const attemptIdSchema = uuidSchema;

@@ -3,7 +3,14 @@ import { copySessionCookies, fail } from "@/lib/http/response";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /** Halaman yang butuh login (PRD §7). Publik = sisanya. */
-const PROTECTED_PAGES = ["/profil", "/riwayat", "/dasbor", "/admin", "/perbarui-sandi"] as const;
+const PROTECTED_PAGES = [
+  "/profil",
+  "/riwayat",
+  "/dasbor",
+  "/admin",
+  "/perbarui-sandi",
+  "/percobaan",
+] as const;
 
 /** Endpoint API yang butuh login. Sisanya di /api diasumsikan publik
  *  (saat ini: /api/quizzes, /api/health, /api/cron). */
