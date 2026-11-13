@@ -35,7 +35,7 @@ export const searchQuerySchema = z
   .max(100, "Kata pencarian maksimal 100 karakter");
 
 export const paginationSchema = z.object({
-  cursor: uuidSchema.optional(),
+  cursor: z.string().max(1000, "Kursor tidak valid").optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 

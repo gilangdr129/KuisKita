@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
 
 /** Keep-alive harian: satu query ringan agar Supabase Free tidak menjeda proyek. */
 export async function GET(request: Request) {

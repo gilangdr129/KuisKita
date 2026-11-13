@@ -1,15 +1,9 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { MulaiKontrol } from "@/components/kuis/mulai-kontrol";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { MulaiKontrol } from "@/components/kuis/mulai-kontrol";
-import { createUserClient } from "@/lib/supabase/server";
-
-export const dynamic = "force-dynamic";
-
-type Props = {
-  params: Promise<{ id: string }>;
-};
+import { ambilKuisDetail } from "@/lib/cache/katalog";
 
 const KESULITAN_LABEL: Record<string, string> = {
   easy: "Mudah",
@@ -23,58 +17,42 @@ function formatDurasi(detik: number) {
   return `${menit} menit`;
 }
 
+export const instant = false;
+
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
 /**
- * Halaman detail kuis (sementara, non-ISR). Soal & opsi dibaca lewat klien
- * ter-sesi sehingga RLS berlaku penuh: kuis draft hanya terlihat pemiliknya,
- * dan question_keys tidak pernah diminta (kunci jawaban tak pernah ke klien).
+ * Detail kuis resmi (ISR, PRD FR-K5): deskripsi, jumlah soal, durasi,
+ * kesulitan, kreator, skor tertinggi, dan daftar soal + opsi TANPA kunci.
+ * Kuis non-publik (draft/suspended) tidak pernah dirender ke siapapun.
  */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const kuis = await ambilKuisDetail(id);
+  if (!kuis) return { title: "Kuis tidak ditemukan" };
+  return { title: kuis.judul, description: kuis.deskripsi ?? undefined };
+}
+
 export default async function KuisDetailPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createUserClient();
+  const kuis = await ambilKuisDetail(id);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: quiz } = await supabase
-    .from("quizzes")
-    .select("id, judul, deskripsi, kesulitan, durasi_detik, status, visibilitas, owner_id")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (!quiz) {
+  if (!kuis) {
     notFound();
   }
-
-  // Username kreator diambil terpisah: profiles sengaja hanya mengizinkan
-  // SELECT kolom tertentu (username/avatar_url) untuk anon, sehingga embed
-  // PostgREST (yang butuh hak SELECT tabel) tidak dipakai di sini.
-  const { data: kreatorRow } = await supabase
-    .from("profiles")
-    .select("username")
-    .eq("id", quiz.owner_id)
-    .maybeSingle();
-
-  const { data: soal } = await supabase
-    .from("questions")
-    .select("id, teks, tipe, bobot, urutan, options ( id, teks, urutan )")
-    .eq("quiz_id", id)
-    .order("urutan", { ascending: true });
-
-  const daftarSoal = soal ?? [];
-  const kreator = kreatorRow as { username: string } | null;
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10">
       <div className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">
-          {KESULITAN_LABEL[quiz.kesulitan] ?? quiz.kesulitan} · {formatDurasi(quiz.durasi_detik)}
+          {KESULITAN_LABEL[kuis.kesulitan] ?? kuis.kesulitan} · {formatDurasi(kuis.durasi_detik)}
         </p>
-        <h1 className="text-3xl font-bold tracking-tight">{quiz.judul}</h1>
-        <p className="text-slate-600 dark:text-slate-300">{quiz.deskripsi}</p>
+        <h1 className="text-3xl font-bold tracking-tight">{kuis.judul}</h1>
+        <p className="text-slate-600 dark:text-slate-300">{kuis.deskripsi}</p>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          {daftarSoal.length} soal · dibuat oleh @{kreator?.username ?? "kuiskita"}
-          {quiz.status !== "published" ? " · draf (hanya Anda yang melihat)" : ""}
+          {kuis.soal.length} soal · dibuat oleh @{kuis.kreator_username ?? "kuiskita"}
         </p>
       </div>
 
@@ -86,23 +64,19 @@ export default async function KuisDetailPage({ params }: Props) {
               Skor dihitung di server. Sisa waktu tersimpan meski halaman dimuat ulang.
             </CardDescription>
           </div>
-          {user ? (
-            <MulaiKontrol quizId={quiz.id} />
-          ) : (
-            <Button href={`/masuk?next=/kuis/${quiz.id}`}>Masuk untuk mulai</Button>
-          )}
+          <MulaiKontrol quizId={kuis.id} />
         </CardHeader>
       </Card>
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">Daftar soal</h2>
-        {daftarSoal.length === 0 ? (
+        {kuis.soal.length === 0 ? (
           <EmptyState
             title="Belum ada soal"
             description="Kuis ini belum memiliki soal yang terbit."
           />
         ) : (
-          daftarSoal.map((item, index) => (
+          kuis.soal.map((item, index) => (
             <Card key={item.id}>
               <CardHeader>
                 <CardTitle className="text-base">
@@ -113,7 +87,7 @@ export default async function KuisDetailPage({ params }: Props) {
                 </CardDescription>
               </CardHeader>
               <ul className="mt-3 flex list-disc flex-col gap-1 pl-8 text-sm text-slate-700 dark:text-slate-300">
-                {(item.options ?? [])
+                {item.opsi
                   .slice()
                   .sort((a, b) => a.urutan - b.urutan)
                   .map((opsi) => (

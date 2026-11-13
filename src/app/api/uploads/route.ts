@@ -7,7 +7,6 @@ import {
   type TujuanUnggahan,
 } from "@/lib/uploads/validate";
 
-export const dynamic = "force-dynamic";
 
 const BUCKET = "media-kuis";
 

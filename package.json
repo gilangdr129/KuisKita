@@ -22,6 +22,7 @@
     "e2e:attempt": "node scripts/auth/e2e-attempt.mjs",
     "e2e:answers": "node scripts/auth/e2e-answers.mjs",
     "e2e:submit": "node scripts/auth/e2e-submit.mjs",
+    "e2e:katalog": "node scripts/auth/e2e-katalog.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {

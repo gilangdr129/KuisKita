@@ -8,7 +8,8 @@ import { mapRpcError } from "@/lib/attempts/errors";
 import { attemptIdSchema } from "@/lib/validation/schemas";
 import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
+
+export const instant = false;
 
 export const metadata: Metadata = {
   title: "Hasil kuis",

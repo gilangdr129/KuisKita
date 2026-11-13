@@ -11,7 +11,11 @@ import { readFileSync } from "node:fs";
 import process from "node:process";
 
 const listOnly = process.argv.includes("--list");
-const UJI_PATTERN = /(^e2e-|^uji-|kuiskita\.test$|@example\.com$|probe-link-)/;
+// Akun seed (creator.kuiskita@example.com) memegang data seed dan TIDAK boleh
+// dihapus — pencocokan di bawah mengecualikannya secara eksplisit.
+const UJI_EMAIL = /@example\.com$/;
+const LINDUUNGI = /^creator\.kuiskita@/;
+const UJI_PATTERN = (email) => UJI_EMAIL.test(email) && !LINDUUNGI.test(email);
 
 function parseEnvLocal() {
   const env = {};
@@ -34,7 +38,7 @@ if (!url || !key) {
   const listResponse = await fetch(`${url}/auth/v1/admin/users?per_page=200`, { headers });
   const data = await listResponse.json();
   const users = data.users ?? [];
-  const targets = users.filter((user) => UJI_PATTERN.test(user.email ?? ""));
+  const targets = users.filter((user) => UJI_PATTERN(user.email ?? ""));
 
   console.log(`Total pengguna: ${users.length}; pengguna uji: ${targets.length}`);
   for (const user of targets) {

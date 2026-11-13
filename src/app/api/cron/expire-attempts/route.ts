@@ -1,7 +1,6 @@
 import { fail, ok } from "@/lib/http/response";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/cron/expire-attempts — dipanggil Vercel Cron: menutup & menilai

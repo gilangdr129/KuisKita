@@ -40,8 +40,11 @@ export default function Home() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button href="/masuk">Masuk</Button>
-        <Button href="/api/health" variant="secondary">
+        <Button href="/kuis">Lihat katalog kuis</Button>
+        <Button href="/masuk" variant="secondary">
+          Masuk
+        </Button>
+        <Button href="/api/health" variant="ghost">
           Cek kesehatan API
         </Button>
       </div>

@@ -7,7 +7,8 @@ import { attemptIdSchema } from "@/lib/validation/schemas";
 import { Suspense } from "react";
 import { createUserClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
+
+export const instant = false;
 
 export const metadata: Metadata = {
   title: "Ruang kuis",

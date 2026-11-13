@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,12 +12,15 @@ import { readData, readError, type EnvelopeError } from "@/lib/http/client";
 import { signUpSchema, type SignUpInput } from "@/lib/validation/schemas";
 
 type Props = {
-  /** Halaman tujuan setelah daftar sukses. */
+  /** Halaman tujuan setelah daftar sukses (opsional; default dari URL ?next=). */
   next?: string;
 };
 
-export function DaftarForm({ next = "/" }: Props) {
+export function DaftarForm({ next: nextProp }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const next = nextProp ?? (nextParam?.startsWith("/") ? nextParam : "/");
   const [formError, setFormError] = useState<string | null>(null);
 
   const {

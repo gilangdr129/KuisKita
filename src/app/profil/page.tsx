@@ -6,6 +6,8 @@ import { AvatarUpload } from "@/components/profil/avatar-upload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createUserClient } from "@/lib/supabase/server";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Profil",
 };
