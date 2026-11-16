@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MulaiKontrol } from "@/components/kuis/mulai-kontrol";
+import { SoalDaftar } from "@/components/kuis/soal-daftar";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { ambilKuisDetail } from "@/lib/cache/katalog";
 
 const KESULITAN_LABEL: Record<string, string> = {
@@ -68,36 +68,10 @@ export default async function KuisDetailPage({ params }: Props) {
         </CardHeader>
       </Card>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">Daftar soal</h2>
-        {kuis.soal.length === 0 ? (
-          <EmptyState
-            title="Belum ada soal"
-            description="Kuis ini belum memiliki soal yang terbit."
-          />
-        ) : (
-          kuis.soal.map((item, index) => (
-            <Card key={item.id}>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  {index + 1}. {item.teks}
-                </CardTitle>
-                <CardDescription>
-                  {item.tipe === "boolean" ? "Benar / salah" : "Pilihan ganda"} · bobot {item.bobot}
-                </CardDescription>
-              </CardHeader>
-              <ul className="mt-3 flex list-disc flex-col gap-1 pl-8 text-sm text-slate-700 dark:text-slate-300">
-                {item.opsi
-                  .slice()
-                  .sort((a, b) => a.urutan - b.urutan)
-                  .map((opsi) => (
-                    <li key={opsi.id}>{opsi.teks}</li>
-                  ))}
-              </ul>
-            </Card>
-          ))
-        )}
-      </section>
+      <SoalDaftar
+        soal={kuis.soal}
+        pesanKosong="Kuis ini belum memiliki soal yang terbit."
+      />
     </main>
   );
 }

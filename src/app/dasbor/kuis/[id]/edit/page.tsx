@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { KuisAksi } from "@/components/dasbor/kuis-aksi";
 import { StatusBadge } from "@/components/kuis/status-badge";
 import { KuisForm, type KategoriOpsi } from "@/components/kuis/kuis-form";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { KUIS_SELECT } from "@/lib/creator/kuis";
 import { ambilAksesDasbor, ambilKategoriOpsi } from "@/lib/dasbor/akses";
@@ -77,6 +78,19 @@ export default async function EditKuisPage({ params }: Props) {
 
       <Card>
         <KuisForm mode="edit" kategoriOpsi={kategoriOpsi} kuisAwal={kuisAwal} />
+      </Card>
+
+      <Card>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-base font-semibold">Soal & kunci jawaban</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Kelola soal, opsi, kunci jawaban, dan gambar pada editor soal. Penerbitan menyusul
+              setelah kuis memiliki soal lengkap.
+            </p>
+          </div>
+          <Button href={`/dasbor/kuis/${kuisAwal.id}/soal`}>Editor soal</Button>
+        </div>
       </Card>
 
       <Card>

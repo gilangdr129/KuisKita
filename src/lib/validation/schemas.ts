@@ -189,3 +189,66 @@ export const quizUpdateSchema = z.object({
 
 export type QuizCreateInput = z.infer<typeof quizCreateSchema>;
 export type QuizUpdateInput = z.infer<typeof quizUpdateSchema>;
+
+// ============================================================
+// Skema editor soal (F13)
+// ============================================================
+
+/** Maksimal opsi per soal & soal per kuis (PRD FR-P2). */
+export const MAKS_OPSI = 8;
+export const MAKS_SOAL = 100;
+
+export const opsiInputSchema = z.object({
+  teks: z
+    .string()
+    .trim()
+    .min(1, "Teks opsi minimal 1 karakter")
+    .max(500, "Teks opsi maksimal 500 karakter"),
+});
+
+export type OpsiInput = z.infer<typeof opsiInputSchema>;
+
+export const soalInputSchema = z
+  .object({
+    teks: z
+      .string()
+      .trim()
+      .min(1, "Teks soal minimal 1 karakter")
+      .max(1000, "Teks soal maksimal 1000 karakter"),
+    tipe: z.enum(["single", "boolean"], {
+      message: "Tipe soal harus single atau boolean",
+    }),
+    bobot: z.coerce
+      .number()
+      .min(0, "Bobot minimal 0")
+      .max(100, "Bobot maksimal 100")
+      .default(1),
+    pembahasan: z
+      .string()
+      .trim()
+      .max(2000, "Pembahasan maksimal 2000 karakter")
+      .default(""),
+    /** URL publik dari bucket media-kuis (diunggah lewat F5). */
+    gambar_url: z.string().url("URL gambar tidak valid").nullish(),
+    opsi: z
+      .array(opsiInputSchema)
+      .min(2, "Setiap soal minimal 2 opsi")
+      .max(MAKS_OPSI, `Maksimal ${MAKS_OPSI} opsi per soal`),
+  })
+  .refine((data) => data.tipe !== "boolean" || data.opsi.length === 2, {
+    message: "Soal benar/salah harus punya tepat 2 opsi",
+    path: ["opsi"],
+  });
+
+export type SoalInput = z.infer<typeof soalInputSchema>;
+
+/** Isi PUT struktur soal: urutan = posisi array (editor menukar posisi). */
+export const simpanSoalSchema = z.object({
+  soal: z.array(soalInputSchema).max(MAKS_SOAL, `Maksimal ${MAKS_SOAL} soal per kuis`),
+});
+
+/** Kunci jawaban dikirim terpisah: question_id + option_id. */
+export const kunciInputSchema = z.object({
+  question_id: uuidSchema,
+  option_id: uuidSchema,
+});

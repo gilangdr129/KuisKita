@@ -2,7 +2,7 @@
 /**
  * E2E detail kuis (Gate F6):
  *   - halaman detail menampilkan soal & opsi TANPA membocorkan kunci jawaban
- *   - kuis draf 404 untuk anon (RLS), 200 untuk pemilik
+ *   - kuis draf 404 untuk anon DAN pemilik (jalur pratinjau pemilik = F13)
  *   - question_keys tertutup untuk klien anon
  *
  * Jalankan dev server (npm run dev) dan seed (npm run db:seed) lebih dulu:
@@ -102,7 +102,9 @@ try {
     `status ${drafAnonRes.status}`,
   );
 
-  // ---------------------------------------------- draf 200 untuk pemilik
+  // ---------------------------------------------- draf tetap privat untuk semua
+  // (sejak F10 halaman detail memakai cache ISR published-only; jalur pemilik
+  // untuk melihat draf = halaman pratinjau bertoken, diuji di e2e-soal F13)
   const loginRes = await fetch(`${BASE_URL}/api/auth/masuk`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -115,8 +117,8 @@ try {
     headers: { cookie },
   });
   report(
-    "kuis draf 200 untuk pemiliknya",
-    drafOwnerRes.status === 200,
+    "kuis draf 404 juga untuk pemilik (draf tak pernah publik; jalur pemilik = pratinjau F13)",
+    drafOwnerRes.status === 404,
     `status ${drafOwnerRes.status}`,
   );
 

@@ -1,7 +1,9 @@
 import {
   forgotPasswordSchema,
+  kunciInputSchema,
   quizCreateSchema,
   quizUpdateSchema,
+  simpanSoalSchema,
   signInSchema,
   signUpSchema,
   updatePasswordSchema,
@@ -145,5 +147,83 @@ describe("skema kuis kreator (F12)", () => {
   it("skema update menerima objek kosong dan kategori null", () => {
     expect(quizUpdateSchema.safeParse({}).success).toBe(true);
     expect(quizUpdateSchema.safeParse({ kategori: null }).success).toBe(true);
+  });
+});
+
+describe("skema editor soal (F13)", () => {
+  const opsi = (jumlah: number) =>
+    Array.from({ length: jumlah }, (_, i) => ({ teks: `Opsi ${i + 1}` }));
+
+  it("menerima soal single dengan opsi & default bobot/pembahasan", () => {
+    const result = simpanSoalSchema.safeParse({
+      soal: [{ teks: "Ibu kota Indonesia?", tipe: "single", opsi: opsi(4) }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const soal = result.data.soal[0];
+      expect(soal?.bobot).toBe(1);
+      expect(soal?.pembahasan).toBe("");
+      expect(soal?.gambar_url).toBeUndefined();
+    }
+  });
+
+  it("menolak teks soal kosong atau > 1000 karakter", () => {
+    expect(simpanSoalSchema.safeParse({ soal: [{ teks: "", tipe: "single", opsi: opsi(2) }] }).success).toBe(false);
+    expect(
+      simpanSoalSchema.safeParse({
+        soal: [{ teks: "a".repeat(1001), tipe: "single", opsi: opsi(2) }],
+      }).success,
+    ).toBe(false);
+    expect(
+      simpanSoalSchema.safeParse({ soal: [{ teks: "a".repeat(1000), tipe: "single", opsi: opsi(2) }] }).success,
+    ).toBe(true);
+  });
+
+  it("menolak tipe di luar single/boolean", () => {
+    expect(
+      simpanSoalSchema.safeParse({ soal: [{ teks: "Soal", tipe: "essay", opsi: opsi(2) }] }).success,
+    ).toBe(false);
+  });
+
+  it("menegakkan minimal 2 & maksimal 8 opsi", () => {
+    expect(simpanSoalSchema.safeParse({ soal: [{ teks: "Soal", tipe: "single", opsi: opsi(1) }] }).success).toBe(false);
+    expect(simpanSoalSchema.safeParse({ soal: [{ teks: "Soal", tipe: "single", opsi: opsi(8) }] }).success).toBe(true);
+    expect(simpanSoalSchema.safeParse({ soal: [{ teks: "Soal", tipe: "single", opsi: opsi(9) }] }).success).toBe(false);
+  });
+
+  it("soal boolean harus punya tepat 2 opsi", () => {
+    expect(simpanSoalSchema.safeParse({ soal: [{ teks: "Benar?", tipe: "boolean", opsi: opsi(2) }] }).success).toBe(true);
+    expect(simpanSoalSchema.safeParse({ soal: [{ teks: "Benar?", tipe: "boolean", opsi: opsi(3) }] }).success).toBe(false);
+  });
+
+  it("menerima teks opsi kosong? (minimal 1 karakter)", () => {
+    expect(
+      simpanSoalSchema.safeParse({
+        soal: [{ teks: "Soal", tipe: "single", opsi: [{ teks: "" }, { teks: "B" }] }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("menerima gambar_url nullish (URL valid diunggah F5)", () => {
+    expect(
+      simpanSoalSchema.safeParse({
+        soal: [{ teks: "Soal", tipe: "single", opsi: opsi(2), gambar_url: null }],
+      }).success,
+    ).toBe(true);
+    expect(
+      simpanSoalSchema.safeParse({
+        soal: [{ teks: "Soal", tipe: "single", opsi: opsi(2), gambar_url: "bukan-url" }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("kunci dikirim terpisah sebagai question_id + option_id", () => {
+    expect(
+      kunciInputSchema.safeParse({
+        question_id: "8b6221bc-ca21-4500-a0ea-4ba5a10434e7",
+        option_id: "aafc6e1b-64cc-44b7-b27e-3384d9d1aa4f",
+      }).success,
+    ).toBe(true);
+    expect(kunciInputSchema.safeParse({ question_id: "bukan-uuid", option_id: "x" }).success).toBe(false);
   });
 });

@@ -164,3 +164,80 @@ describe("migrasi F1", () => {
     }
   });
 });
+
+describe("migrasi F13 (editor soal + kunci server-only + pratinjau)", () => {
+  /** Signature RPC ditulis multi-baris → bandingkan tanpa whitespace. */
+  const sqlPadat = sql.replace(/\s+/g, "");
+
+  it("punya berkas migrasi editor soal", () => {
+    expect(files.some((name) => name.includes("editor_soal"))).toBe(true);
+  });
+
+  it("membuat RPC editor & mencabut EXECUTE dari anon/authenticated/public", () => {
+    const rpc = [
+      {
+        tandaTangan: "public.simpan_soal_kuis(p_user_iduuid,p_quiz_iduuid,p_soaljsonb)",
+        revoke: "public.simpan_soal_kuis(uuid,uuid,jsonb)",
+      },
+      {
+        tandaTangan: "public.simpan_kunci_jawaban(p_user_iduuid,p_question_iduuid,p_option_iduuid)",
+        revoke: "public.simpan_kunci_jawaban(uuid,uuid,uuid)",
+      },
+      {
+        tandaTangan: "public.buat_token_pratinjau(p_user_iduuid,p_quiz_iduuid)",
+        revoke: "public.buat_token_pratinjau(uuid,uuid)",
+      },
+      {
+        tandaTangan: "public.pakai_token_pratinjau(p_tokenuuid)",
+        revoke: "public.pakai_token_pratinjau(uuid)",
+      },
+    ];
+    for (const { tandaTangan, revoke } of rpc) {
+      expect(sqlPadat, `RPC ${tandaTangan}`).toContain(
+        `createorreplacefunction${tandaTangan}`,
+      );
+      expect(sqlPadat, `revoke ${revoke}`).toContain(
+        `revokeexecuteonfunction${revoke}fromanon,authenticated,public;`,
+      );
+    }
+  });
+
+  it("RPC penerbitan soal memeriksa kepemilikan & struktur terkunci", () => {
+    const simpan = sql.slice(sql.indexOf("function public.simpan_soal_kuis"));
+    const badan = simpan.slice(0, simpan.indexOf("$$;"));
+    expect(badan).toContain("owner_id = p_user_id");
+    expect(badan).toContain("raise exception 'STRUCTURE_LOCKED");
+    expect(badan).toContain("raise exception 'OPSI_TERLALU_BANYAK");
+  });
+
+  it("RPC kunci hanya menerima opsi milik soal yang sama", () => {
+    const kunci = sql.slice(sql.indexOf("function public.simpan_kunci_jawaban"));
+    const badan = kunci.slice(0, kunci.indexOf("$$;"));
+    expect(badan).toContain("and o.question_id = p_question_id");
+    expect(badan).toContain("raise exception 'OPTION_MISMATCH");
+    expect(badan).toContain("insert into public.question_keys");
+  });
+
+  it("trigger question_keys_option_match menjaga opsi milik soal", () => {
+    expect(sql).toContain("create trigger question_keys_option_match");
+    const fn = sql.slice(sql.indexOf("function public.guard_question_keys_match()"));
+    expect(fn.slice(0, fn.indexOf("$$;"))).toContain("and o.question_id = new.question_id");
+  });
+
+  it("preview_tokens tanpa policy & tanpa grant klien", () => {
+    expect(sql).toContain("create table if not exists public.preview_tokens");
+    expect(sql).toContain("revoke all on table public.preview_tokens from anon, authenticated");
+
+    const awal = sql.indexOf("create table if not exists public.preview_tokens");
+    const akhir = sql.indexOf("create or replace function public.buat_token_pratinjau", awal);
+    expect(awal).toBeGreaterThan(-1);
+    expect(akhir).toBeGreaterThan(awal);
+    expect(sql.slice(awal, akhir)).not.toContain("create policy");
+    expect(sql).not.toContain("grant select on public.preview_tokens");
+  });
+
+  it("token pratinjau terbatas 30 menit dan terikat pemilik", () => {
+    expect(sql).toContain("now() + interval '30 minutes'");
+    expect(sql).toContain("and q.owner_id = p_user_id");
+  });
+});

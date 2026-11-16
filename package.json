@@ -24,6 +24,7 @@
     "e2e:submit": "node scripts/auth/e2e-submit.mjs",
     "e2e:katalog": "node scripts/auth/e2e-katalog.mjs",
     "e2e:creator": "node scripts/auth/e2e-creator.mjs",
+    "e2e:soal": "node scripts/auth/e2e-soal.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {

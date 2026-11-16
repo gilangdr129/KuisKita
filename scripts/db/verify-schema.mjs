@@ -29,7 +29,8 @@ const CHECKS_SQL = /* sql */ `
 with
 tables_expected(name) as (
   values ('profiles'),('categories'),('quizzes'),('questions'),('options'),
-         ('question_keys'),('attempts'),('attempt_answers'),('reports'),('audit_logs')
+         ('question_keys'),('attempts'),('attempt_answers'),('reports'),('audit_logs'),
+         ('preview_tokens')
 ),
 indexes_expected(name) as (
   values ('quizzes_status_category_published_idx'),('quizzes_owner_idx'),
@@ -59,7 +60,13 @@ triggers_expected(name) as (
   values ('on_auth_user_created'),('attempts_block_after_submit'),
          ('answers_block_after_submit'),('questions_structure_guard'),
          ('options_structure_guard'),('question_keys_structure_guard'),
-         ('quizzes_delete_to_suspend'),('quizzes_set_updated_at')
+         ('quizzes_delete_to_suspend'),('quizzes_set_updated_at'),
+         ('question_keys_option_match')
+),
+functions_expected(name) as (
+  values ('simpan_soal_kuis'),('simpan_kunci_jawaban'),
+         ('buat_token_pratinjau'),('pakai_token_pratinjau'),
+         ('guard_question_keys_match')
 )
 select 'tabel:' || name as check_name, to_regclass('public.' || name) is not null as ok
   from tables_expected
@@ -127,6 +134,34 @@ select 'constraint: question_keys PK (question_id)',
            and con.conkey = array[(select attnum from pg_attribute
                                    where attrelid = c.oid and attname = 'question_id')]
        )
+union all
+select 'fungsi:' || name,
+       exists (
+         select 1 from pg_proc p
+         join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'public' and p.proname = name
+       )
+  from functions_expected
+union all
+select 'grant: authenticated tanpa akses preview_tokens',
+       not has_table_privilege('authenticated', 'public.preview_tokens', 'select')
+       and not has_table_privilege('authenticated', 'public.preview_tokens', 'insert')
+union all
+select 'grant: anon tanpa akses preview_tokens',
+       not has_table_privilege('anon', 'public.preview_tokens', 'select')
+       and not has_table_privilege('anon', 'public.preview_tokens', 'insert')
+union all
+select 'grant: authenticated tanpa execute simpan_soal_kuis',
+       not has_function_privilege('authenticated', 'public.simpan_soal_kuis(uuid, uuid, jsonb)', 'execute')
+union all
+select 'grant: authenticated tanpa execute simpan_kunci_jawaban',
+       not has_function_privilege('authenticated', 'public.simpan_kunci_jawaban(uuid, uuid, uuid)', 'execute')
+union all
+select 'grant: authenticated tanpa execute buat_token_pratinjau',
+       not has_function_privilege('authenticated', 'public.buat_token_pratinjau(uuid, uuid)', 'execute')
+union all
+select 'grant: authenticated tanpa execute pakai_token_pratinjau',
+       not has_function_privilege('authenticated', 'public.pakai_token_pratinjau(uuid)', 'execute')
 union all
 select 'kolom: quizzes.updated_at ada + not null',
        exists (
