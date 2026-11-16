@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MulaiKontrol } from "@/components/kuis/mulai-kontrol";
+import { PapanPeringkat } from "@/components/kuis/papan-peringkat";
 import { SoalDaftar } from "@/components/kuis/soal-daftar";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ambilKuisDetail } from "@/lib/cache/katalog";
@@ -67,6 +68,8 @@ export default async function KuisDetailPage({ params }: Props) {
           <MulaiKontrol quizId={kuis.id} />
         </CardHeader>
       </Card>
+
+      <PapanPeringkat quizId={kuis.id} />
 
       <SoalDaftar
         soal={kuis.soal}

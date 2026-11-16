@@ -1,4 +1,5 @@
 import { fail, ok } from "@/lib/http/response";
+import { nonaktifkanPeringkat } from "@/lib/leaderboard/redis";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
 
@@ -23,7 +24,25 @@ export async function GET(request: Request) {
       return fail(request, 500, "EXPIRE_FAILED", error.message);
     }
 
-    return ok(request, { task: "expire-overdue-attempts", ditutup: data ?? 0 });
+    // Percobaan yang baru kedaluwarsa kini berperingkat (attempt expired ikut
+    // papan peringkat): invalidasi cache kuis-kuis yang terpapar.
+    const batasWaktu = new Date(Date.now() - 5 * 60_000).toISOString();
+    const { data: terpapar } = await supabase
+      .from("attempts")
+      .select("quiz_id")
+      .eq("status", "expired")
+      .gte("submitted_at", batasWaktu);
+
+    const kuisTerpapar = [...new Set((terpapar ?? []).map((row) => String(row.quiz_id)))];
+    for (const quizId of kuisTerpapar) {
+      await nonaktifkanPeringkat(quizId);
+    }
+
+    return ok(request, {
+      task: "expire-overdue-attempts",
+      ditutup: data ?? 0,
+      peringkat_diinvalidasi: kuisTerpapar.length,
+    });
   } catch (error) {
     return fail(
       request,

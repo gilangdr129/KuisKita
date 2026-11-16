@@ -26,6 +26,7 @@
     "e2e:creator": "node scripts/auth/e2e-creator.mjs",
     "e2e:soal": "node scripts/auth/e2e-soal.mjs",
     "e2e:terbit": "node scripts/auth/e2e-terbit.mjs",
+    "e2e:peringkat": "node scripts/auth/e2e-peringkat.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {

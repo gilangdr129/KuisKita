@@ -252,3 +252,12 @@ export const kunciInputSchema = z.object({
   question_id: uuidSchema,
   option_id: uuidSchema,
 });
+
+// ============================================================
+// Skema papan peringkat (F15)
+// ============================================================
+
+export const leaderboardQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+  cursor: z.string().max(1000, "Kursor tidak valid").optional(),
+});

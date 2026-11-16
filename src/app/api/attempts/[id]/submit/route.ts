@@ -1,6 +1,7 @@
 import { fail, ok } from "@/lib/http/response";
 import { mapRpcError } from "@/lib/attempts/errors";
 import { verifikasiSkorDariDb } from "@/lib/attempts/skor";
+import { nonaktifkanPeringkat } from "@/lib/leaderboard/redis";
 import { attemptIdSchema } from "@/lib/validation/schemas";
 import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 
@@ -58,6 +59,17 @@ export async function POST(request: Request, { params }: Props) {
   const selisih = await verifikasiSkorDariDb(supabase, validation.data, hasil);
   if (selisih.length > 0) {
     console.error("SKOR_DRIFT", { attempt: validation.data, selisih });
+  }
+
+  // Percobaan kini final → masuk papan peringkat: invalidasi cache kuis ini
+  // (naikkan nomor versi; entri cache lama tak akan terbaca lagi).
+  const { data: attempt } = await supabase
+    .from("attempts")
+    .select("quiz_id")
+    .eq("id", validation.data)
+    .maybeSingle();
+  if (attempt?.quiz_id) {
+    await nonaktifkanPeringkat(attempt.quiz_id);
   }
 
   if (hasil.expired) {
