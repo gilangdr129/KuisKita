@@ -59,7 +59,7 @@ triggers_expected(name) as (
   values ('on_auth_user_created'),('attempts_block_after_submit'),
          ('answers_block_after_submit'),('questions_structure_guard'),
          ('options_structure_guard'),('question_keys_structure_guard'),
-         ('quizzes_delete_to_suspend')
+         ('quizzes_delete_to_suspend'),('quizzes_set_updated_at')
 )
 select 'tabel:' || name as check_name, to_regclass('public.' || name) is not null as ok
   from tables_expected
@@ -126,6 +126,13 @@ select 'constraint: question_keys PK (question_id)',
          where n.nspname = 'public' and c.relname = 'question_keys' and con.contype = 'p'
            and con.conkey = array[(select attnum from pg_attribute
                                    where attrelid = c.oid and attname = 'question_id')]
+       )
+union all
+select 'kolom: quizzes.updated_at ada + not null',
+       exists (
+         select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'quizzes'
+           and column_name = 'updated_at' and is_nullable = 'NO'
        )
 union all
 select 'ekstensi: pg_trgm aktif',

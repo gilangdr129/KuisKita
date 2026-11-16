@@ -250,7 +250,6 @@ try {
 
   // ------------------------------------------------ relevansi pencarian
   const relevan = await kueri({ q: "Cenderawasih" });
-  const relevanJudul = (relevan.data.items ?? [])[0]?.judul;
   report(
     "pencarian 'Cenderawasih' (kata hanya di soal, bukan judul) → 0 hasil tanpa error",
     relevan.status === 200 && (relevan.data.items ?? []).length === 0,
@@ -301,8 +300,17 @@ try {
   report("eksekusi e2e katalog", false, error instanceof Error ? error.message : String(error));
 } finally {
   // Hapus kuis uji + user katalog-uji.
+  // Percobaan & jawaban dihapus lebih dulu: trigger quizzes_delete_to_suspend
+  // mengubah DELETE menjadi suspend bila kuis masih punya percobaan.
   for (const id of quizzesToDelete) {
     if (!id) continue;
+    await client
+      .query(
+        "delete from public.attempt_answers where attempt_id in (select id from public.attempts where quiz_id = $1)",
+        [id],
+      )
+      .catch(() => undefined);
+    await client.query("delete from public.attempts where quiz_id = $1", [id]).catch(() => undefined);
     await client.query("delete from public.quizzes where id = $1", [id]).catch(() => undefined);
   }
   const users = await client

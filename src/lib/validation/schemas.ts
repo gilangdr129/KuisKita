@@ -119,3 +119,73 @@ export const saveAnswerSchema = z.object({
   pertanyaan_id: uuidSchema,
   opsi_id: uuidSchema,
 });
+
+// ============================================================
+// Skema kuis kreator (F12)
+// ============================================================
+
+export const quizVisibilitySchema = z.enum(["public", "unlisted", "private"], {
+  message: "Visibilitas harus public, unlisted, atau private",
+});
+
+/** Isi kuis baru (selalu dibuat sebagai draft; terbit = F14). */
+export const judulKuisSchema = z
+  .string()
+  .trim()
+  .min(3, "Judul minimal 3 karakter")
+  .max(120, "Judul maksimal 120 karakter");
+
+export const deskripsiKuisSchema = z
+  .string()
+  .trim()
+  .max(2000, "Deskripsi maksimal 2000 karakter");
+
+export const durasiKuisSchema = z.coerce
+  .number()
+  .int("Durasi harus bilangan bulat detik")
+  .min(1, "Durasi minimal 1 detik")
+  .max(86400, "Durasi maksimal 86400 detik (24 jam)");
+
+export const maksPercobaanSchema = z.coerce
+  .number()
+  .int("Maksimal percobaan harus bilangan bulat")
+  .min(1, "Maksimal percobaan minimal 1")
+  .max(100, "Maksimal percobaan maksimal 100")
+  .nullish();
+
+export const quizCreateSchema = z.object({
+  judul: judulKuisSchema,
+  deskripsi: deskripsiKuisSchema.default(""),
+  durasi_detik: durasiKuisSchema,
+  kesulitan: quizDifficultySchema,
+  /** Slug kategori; null/absen = tanpa kategori. */
+  kategori: slugSchema.nullish(),
+  acak_soal: z.boolean().default(false),
+  acak_opsi: z.boolean().default(false),
+  /** null = tanpa batas percobaan. */
+  maks_percobaan: maksPercobaanSchema,
+  visibilitas: quizVisibilitySchema.default("public"),
+});
+
+/**
+ * Perubahan metadata kuis. Hanya bidang yang dikirim yang diubah; bidang tak
+ * dikenal (termasuk status & owner) ditolak agar terbit/tangguhkan hanya lewat
+ * jalur resmi (F14 / DELETE). Skema ini TIDAK memakai .partial() karena Zod 4
+ * tetap menerapkan default untuk key yang absen — itu akan menimpa nilai lama.
+ */
+export const quizUpdateSchema = z.object({
+  judul: judulKuisSchema.optional(),
+  deskripsi: deskripsiKuisSchema.optional(),
+  durasi_detik: durasiKuisSchema.optional(),
+  kesulitan: quizDifficultySchema.optional(),
+  /** null = hapus kategori. */
+  kategori: slugSchema.nullish(),
+  acak_soal: z.boolean().optional(),
+  acak_opsi: z.boolean().optional(),
+  /** null = hapus batas percobaan. */
+  maks_percobaan: maksPercobaanSchema,
+  visibilitas: quizVisibilitySchema.optional(),
+});
+
+export type QuizCreateInput = z.infer<typeof quizCreateSchema>;
+export type QuizUpdateInput = z.infer<typeof quizUpdateSchema>;
