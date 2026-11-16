@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { KuisAksi } from "@/components/dasbor/kuis-aksi";
+import { KuisDuplikasi } from "@/components/dasbor/kuis-duplikasi";
 import { StatusBadge } from "@/components/kuis/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,6 +144,7 @@ export default async function DasborPage({ searchParams }: Props) {
                           Lihat halaman kuis
                         </Button>
                       ) : null}
+                      <KuisDuplikasi id={kuis.id} judul={kuis.judul} />
                       <KuisAksi id={kuis.id} judul={kuis.judul} status={kuis.status} />
                       <span className="ml-auto text-xs text-slate-500 dark:text-slate-400">
                         Diperbarui {formatTanggal(kuis.updated_at)}

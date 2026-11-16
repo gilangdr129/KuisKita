@@ -76,6 +76,7 @@ export function EditorSoal({ quizId, statusKuis, soalAwal }: Props) {
   );
   const [pesan, setPesan] = React.useState<{ jenis: "sukses" | "galat"; teks: string } | null>(null);
   const [menyimpan, setMenyimpan] = React.useState(false);
+  const [menerbitkan, setMenerbitkan] = React.useState(false);
   const [mengunggah, setMengunggah] = React.useState<number | null>(null);
   const [tautanPratinjau, setTautanPratinjau] = React.useState<string | null>(null);
 
@@ -164,11 +165,11 @@ export function EditorSoal({ quizId, statusKuis, soalAwal }: Props) {
     return null;
   };
 
-  const simpan = async () => {
+  const simpan = async (): Promise<boolean> => {
     const galat = validasiLokal();
     if (galat) {
       setPesan({ jenis: "galat", teks: galat });
-      return;
+      return false;
     }
 
     setMenyimpan(true);
@@ -194,7 +195,7 @@ export function EditorSoal({ quizId, statusKuis, soalAwal }: Props) {
       const isi = (await responsSoal.json().catch(() => null)) as { error?: { message?: string } } | null;
       setPesan({ jenis: "galat", teks: isi?.error?.message ?? "Gagal menyimpan soal." });
       setMenyimpan(false);
-      return;
+      return false;
     }
 
     const hasilSoal = (await responsSoal.json()) as {
@@ -230,11 +231,12 @@ export function EditorSoal({ quizId, statusKuis, soalAwal }: Props) {
     setMenyimpan(false);
     if (kunciGagal) {
       setPesan({ jenis: "galat", teks: kunciGagal });
-      return;
+      return false;
     }
 
     setPesan({ jenis: "sukses", teks: "Soal dan kunci jawaban tersimpan." });
     router.refresh();
+    return true;
   };
 
   const buatPratinjau = async () => {
@@ -252,6 +254,47 @@ export function EditorSoal({ quizId, statusKuis, soalAwal }: Props) {
     }
   };
 
+  /** Terbitkan: simpan dulu (struktur + kunci), baru POST publish. */
+  const terbitkan = async () => {
+    const galat = validasiLokal();
+    if (galat) {
+      setPesan({ jenis: "galat", teks: `Perbaiki dulu sebelum terbit — ${galat}` });
+      return;
+    }
+
+    setMenerbitkan(true);
+    setPesan(null);
+
+    // Simpan struktur + kunci lebih dulu agar validasi terbit melihat data terbaru.
+    const tersimpan = await simpan();
+    if (!tersimpan) {
+      setMenerbitkan(false);
+      return;
+    }
+
+    const response = await fetch(`/api/creator/quizzes/${quizId}/publish`, { method: "POST" });
+    setMenerbitkan(false);
+
+    if (response.ok) {
+      const data = (await response.json()) as { data?: { published_at?: string } };
+      setPesan({
+        jenis: "sukses",
+        teks: `Kuis terbit dan langsung tampil di katalog (${data.data?.published_at ?? "sekarang"}).`,
+      });
+      router.refresh();
+      return;
+    }
+
+    const isi = (await response.json().catch(() => null)) as {
+      error?: { code?: string; message?: string };
+    } | null;
+    // Pesan dari RPC sudah spesifik per soal (daftar dipisah "; ").
+    setPesan({
+      jenis: "galat",
+      teks: isi?.error?.message ?? "Gagal menerbitkan kuis.",
+    });
+  };
+
   const kelasInput =
     "min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50";
   const kelasTombolKecil =
@@ -264,6 +307,15 @@ export function EditorSoal({ quizId, statusKuis, soalAwal }: Props) {
         <Button onClick={() => void simpan()} loading={menyimpan}>
           Simpan soal & kunci
         </Button>
+        {statusKuis !== "published" ? (
+          <Button variant="primary" onClick={() => void terbitkan()} loading={menerbitkan}>
+            Terbitkan
+          </Button>
+        ) : (
+          <span className="text-xs font-medium text-teal-700 dark:text-teal-300">
+            Sudah terbit — tampil di katalog publik.
+          </span>
+        )}
         <Button variant="secondary" onClick={() => void buatPratinjau()}>
           Pratinjau
         </Button>

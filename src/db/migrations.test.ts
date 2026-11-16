@@ -241,3 +241,55 @@ describe("migrasi F13 (editor soal + kunci server-only + pratinjau)", () => {
     expect(sql).toContain("and q.owner_id = p_user_id");
   });
 });
+
+describe("migrasi F14 (terbit + duplikasi)", () => {
+  const sqlPadat = sql.replace(/\s+/g, "");
+
+  it("punya berkas migrasi publish/duplikasi", () => {
+    expect(files.some((name) => name.includes("publish_duplikasi"))).toBe(true);
+  });
+
+  it("membuat RPC F14 & mencabut EXECUTE dari anon/authenticated/public", () => {
+    expect(sqlPadat).toContain(
+      "createorreplacefunctionpublic.terbitkan_kuis(p_user_iduuid,p_quiz_iduuid)",
+    );
+    expect(sqlPadat).toContain(
+      "createorreplacefunctionpublic.duplikasi_kuis(p_user_iduuid,p_quiz_iduuid)",
+    );
+    expect(sqlPadat).toContain(
+      "revokeexecuteonfunctionpublic.terbitkan_kuis(uuid,uuid)fromanon,authenticated,public;",
+    );
+    expect(sqlPadat).toContain(
+      "revokeexecuteonfunctionpublic.duplikasi_kuis(uuid,uuid)fromanon,authenticated,public;",
+    );
+  });
+
+  it("terbitkan_kuis memvalidasi minimal soal + kunci + opsi + gambar", () => {
+    const fn = sql.slice(sql.indexOf("function public.terbitkan_kuis"));
+    const badan = fn.slice(0, fn.indexOf("$$;"));
+    expect(badan).toContain("raise exception 'PUBLISH_NO_QUESTIONS");
+    expect(badan).toContain("raise exception 'PUBLISH_MISSING_KEYS");
+    expect(badan).toContain("raise exception 'PUBLISH_INVALID_OPTIONS");
+    expect(badan).toContain("raise exception 'PUBLISH_INVALID_IMAGE");
+    // Gambar hanya dari bucket media-kuis (unggahan F5).
+    expect(badan).toContain("/storage/v1/object/public/media-kuis/%");
+    // Terbit idempoten + published_at diisi.
+    expect(badan).toContain("set status = 'published'");
+    expect(badan).toContain("published_at = now()");
+    expect(badan).toContain("sudah_terbit");
+  });
+
+  it("duplikasi_kuis menyalin metadata + soal + opsi + kunci sebagai draf", () => {
+    const fn = sql.slice(sql.indexOf("function public.duplikasi_kuis"));
+    const badan = fn.slice(0, fn.indexOf("$$;"));
+    expect(badan).toContain("and owner_id = p_user_id");
+    expect(badan).toContain("'draft'");
+    expect(badan).toContain("insert into public.questions");
+    expect(badan).toContain("insert into public.options");
+    expect(badan).toContain("insert into public.question_keys");
+    // Judul salinan dibatasi 120 karakter oleh left(...).
+    expect(badan).toContain("left(v_quiz.judul, 110) || ' (salinan)'");
+    // Tanpa percobaan: duplikasi tidak menyentuh attempts.
+    expect(badan).not.toContain("public.attempts");
+  });
+});

@@ -22,7 +22,10 @@ export type SoalEditor = {
 };
 
 /** Kode error dari RPC editor → status & pesan envelope. */
-const RPC_ERRORS: Record<string, { status: number; code: string; message: string }> = {
+const RPC_ERRORS: Record<
+  string,
+  { status: number; code: string; message: string; /** Pakai pesan RPC (detail per soal). */ pakaiPesanRpc?: boolean }
+> = {
   QUIZ_NOT_FOUND: {
     status: 404,
     code: "NOT_FOUND",
@@ -84,13 +87,55 @@ const RPC_ERRORS: Record<string, { status: number; code: string; message: string
     code: "NOT_FOUND",
     message: "Tautan pratinjau tidak valid atau sudah kedaluwarsa.",
   },
+  // F14 — validasi terbit. Pesan spesifik per soal dibawa RPC (pakaiPesanRpc).
+  PUBLISH_NO_QUESTIONS: {
+    status: 409,
+    code: "PUBLISH_NO_QUESTIONS",
+    message: "Kuis harus punya minimal 1 soal sebelum terbit.",
+  },
+  PUBLISH_MISSING_KEYS: {
+    status: 409,
+    code: "PUBLISH_MISSING_KEYS",
+    message: "Ada soal tanpa kunci jawaban.",
+    pakaiPesanRpc: true,
+  },
+  PUBLISH_INVALID_OPTIONS: {
+    status: 409,
+    code: "PUBLISH_INVALID_OPTIONS",
+    message: "Ada soal dengan opsi kurang dari 2.",
+    pakaiPesanRpc: true,
+  },
+  PUBLISH_INVALID_IMAGE: {
+    status: 409,
+    code: "PUBLISH_INVALID_IMAGE",
+    message: "Ada gambar soal yang bukan dari unggahan yang valid.",
+    pakaiPesanRpc: true,
+  },
 };
+
+/** Ambil bagian pesan setelah prefiks "KODE:" agar detail per soal terbaca. */
+function pesanSetelahKode(message: string, code: string) {
+  const idx = message.indexOf(code);
+  if (idx === -1) return message;
+  return message
+    .slice(idx + code.length)
+    .replace(/^:\s*/, "")
+    .trim();
+}
 
 /** Petakan kesalahan RPC editor (kode di-inline di pesan exception). */
 export function mapRpcSoal(error: unknown, fallbackPesan: string): RpcSoalHasil {
   const message = (error as { message?: string } | null)?.message ?? "";
   for (const [code, mapped] of Object.entries(RPC_ERRORS)) {
-    if (message.includes(code)) return mapped;
+    if (message.includes(code)) {
+      return {
+        status: mapped.status,
+        code: mapped.code,
+        message: "pakaiPesanRpc" in mapped && mapped.pakaiPesanRpc
+          ? pesanSetelahKode(message, code)
+          : mapped.message,
+      };
+    }
   }
   return {
     status: 500,
