@@ -1,6 +1,7 @@
-import { ok } from "@/lib/http/response";
+import { fail, ok } from "@/lib/http/response";
 import { parseOrFail } from "@/lib/http/validate";
-import { AUTH_RATE_LIMIT, checkRateLimit } from "@/lib/security/ratelimit";
+import { AUTH_RATE_LIMIT, batasi, ipKlien } from "@/lib/security/ratelimit";
+import { verifikasiTurnstile } from "@/lib/security/turnstile";
 import { createUserClient } from "@/lib/supabase/server";
 import { forgotPasswordSchema } from "@/lib/validation/schemas";
 
@@ -9,14 +10,17 @@ import { forgotPasswordSchema } from "@/lib/validation/schemas";
  * Selalu balas sukses generik (tidak membocorkan apakah email terdaftar).
  */
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "ip-tak-dikenal";
-  const rate = await checkRateLimit(`lupa-sandi:${ip}`, AUTH_RATE_LIMIT.max);
-  if (!rate.success) {
-    return ok(request, { sent: true });
-  }
+  const ip = ipKlien(request);
+  const batas = await batasi(request, `lupa-sandi:${ip}`, AUTH_RATE_LIMIT.max);
+  if (batas) return batas;
 
   const parsed = parseOrFail(request, forgotPasswordSchema, await request.json().catch(() => null));
   if (!parsed.ok) return parsed.response;
+
+  const turnstile = await verifikasiTurnstile(parsed.data.turnstile_token, ip);
+  if (!turnstile.ok) {
+    return fail(request, 400, turnstile.code, turnstile.message);
+  }
 
   const { email } = parsed.data;
   const origin = new URL(request.url).origin;

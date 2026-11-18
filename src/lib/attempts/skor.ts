@@ -151,19 +151,22 @@ export async function verifikasiSkorDariDb(
 
   const [soal, jawaban, kunci] = await Promise.all([
     supabase.from("questions").select("id, bobot").eq("quiz_id", quizId),
-    supabase.from("attempt_answers").select("pertanyaan_id, opsi_id").eq("attempt_id", attemptId),
+    supabase.from("attempt_answers").select("question_id, option_id").eq("attempt_id", attemptId),
     supabase
       .from("question_keys")
-      .select("pertanyaan_id, opsi_id, questions!inner(quiz_id)")
+      .select("question_id, option_id, questions!inner(quiz_id)")
       .eq("questions.quiz_id", quizId),
   ]);
 
   const rujukan = hitungNilai({
     soal: (soal.data ?? []) as SoalNilai[],
-    jawaban: (jawaban.data ?? []) as JawabanNilai[],
-    kunci: ((kunci.data ?? []) as (KunciNilai & { questions: unknown })[]).map((k) => ({
-      pertanyaan_id: k.pertanyaan_id,
-      opsi_id: k.opsi_id,
+    jawaban: ((jawaban.data ?? []) as { question_id: string; option_id: string }[]).map((row) => ({
+      pertanyaan_id: row.question_id,
+      opsi_id: row.option_id,
+    })),
+    kunci: ((kunci.data ?? []) as { question_id: string; option_id: string }[]).map((k) => ({
+      pertanyaan_id: k.question_id,
+      opsi_id: k.option_id,
     })),
   });
 

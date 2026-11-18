@@ -2,6 +2,7 @@ import { fail, ok } from "@/lib/http/response";
 import { mapRpcError } from "@/lib/attempts/errors";
 import { verifikasiSkorDariDb } from "@/lib/attempts/skor";
 import { nonaktifkanPeringkat } from "@/lib/leaderboard/redis";
+import { SUBMIT_RATE_LIMIT, batasi } from "@/lib/security/ratelimit";
 import { attemptIdSchema } from "@/lib/validation/schemas";
 import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 
@@ -9,11 +10,16 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
+/** Durasi minimum wajar sebelum submit (F18): di bawah ini ditandai review. */
+const MIN_DURASI_SUBMIT_MS = 5000;
+
 /**
  * POST /api/attempts/:id/submit — submit dan nilai (idempoten).
  *
  * Bila waktu sudah habis, server tetap menilai jawaban tersimpan (status
  * expired) dan membalas 409 dengan hasil di dalam envelope error.
+ * Submit yang terlalu cepat (< 5 detik sejak mulai) tetap diterima tetapi
+ * ditandai `tanda_review` dan dicatat — bukan diblokir (F18).
  */
 export async function POST(request: Request, { params }: Props) {
   const { id } = await params;
@@ -29,6 +35,10 @@ export async function POST(request: Request, { params }: Props) {
   if (!user) {
     return fail(request, 401, "UNAUTHORIZED", "Anda harus masuk untuk submit percobaan.");
   }
+
+  // Rate limit: 5 submit per menit per pengguna (F18).
+  const batas = await batasi(request, `submit:${user.id}`, SUBMIT_RATE_LIMIT.max);
+  if (batas) return batas;
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase.rpc("submit_attempt", {
@@ -72,11 +82,23 @@ export async function POST(request: Request, { params }: Props) {
     await nonaktifkanPeringkat(attempt.quiz_id);
   }
 
+  // Deteksi submit terlalu cepat (F18): tandai untuk review, JANGAN blokir —
+  // jawaban pemain tetap dinilai normal.
+  const terlaluCepat = hasil.durasi_ms != null && hasil.durasi_ms < MIN_DURASI_SUBMIT_MS;
+  if (terlaluCepat) {
+    console.warn("SUBMIT_TERLALU_CEPAT", {
+      attempt_id: validation.data,
+      user_id: user.id,
+      durasi_ms: hasil.durasi_ms,
+    });
+  }
+  const hasilAkhir = { ...hasil, tanda_review: terlaluCepat };
+
   if (hasil.expired) {
     return fail(request, 409, "ATTEMPT_EXPIRED", "Waktu pengerjaan sudah habis. Jawaban Anda dinilai dari simpanan terakhir.", {
-      extra: { hasil },
+      extra: { hasil: hasilAkhir },
     });
   }
 
-  return ok(request, hasil);
+  return ok(request, hasilAkhir);
 }

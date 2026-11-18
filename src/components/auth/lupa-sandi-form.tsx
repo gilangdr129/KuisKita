@@ -13,6 +13,7 @@ import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/validation
 export function LupaSandiForm() {
   const [sent, setSent] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
 
   const {
     register,
@@ -28,7 +29,7 @@ export function LupaSandiForm() {
     const response = await fetch("/api/auth/lupa-sandi", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ ...values, turnstile_token: turnstileToken }),
     });
 
     if (response.ok) {
@@ -61,7 +62,7 @@ export function LupaSandiForm() {
                 error={errors.email?.message}
                 {...register("email")}
               />
-              <TurnstileField />
+              <TurnstileField onToken={(token) => setTurnstileToken(token ?? undefined)} />
               {formError ? (
                 <p role="alert" className="text-sm text-red-600 dark:text-red-400">
                   {formError}

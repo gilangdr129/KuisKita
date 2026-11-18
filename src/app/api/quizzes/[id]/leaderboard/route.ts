@@ -1,6 +1,7 @@
 import { fail, ok } from "@/lib/http/response";
 import { parseOrFail } from "@/lib/http/validate";
 import { ambilPeringkatKuis } from "@/lib/leaderboard/ambil";
+import { PUBLIC_API_RATE_LIMIT, batasi, ipKlien } from "@/lib/security/ratelimit";
 import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 import { leaderboardQuerySchema, uuidSchema } from "@/lib/validation/schemas";
 
@@ -33,6 +34,10 @@ export async function GET(request: Request, { params }: Props) {
     cursor: url.searchParams.get("cursor") ?? undefined,
   });
   if (!parsed.ok) return parsed.response;
+
+  // Rate limit API publik: 100 permintaan per menit per IP (F18, fail-open).
+  const batas = await batasi(request, `publik:${ipKlien(request)}`, PUBLIC_API_RATE_LIMIT.max);
+  if (batas) return batas;
 
   // Saklar uji (non-produksi): paksa jalur cache diperlakukan mati.
   const simulasiMati =

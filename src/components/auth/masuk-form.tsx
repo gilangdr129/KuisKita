@@ -18,6 +18,7 @@ export function MasukForm() {
   const next = searchParams.get("next") ?? "/";
   const status = searchParams.get("status");
   const [formError, setFormError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
 
   const {
     register,
@@ -33,7 +34,7 @@ export function MasukForm() {
     const response = await fetch("/api/auth/masuk", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ ...values, turnstile_token: turnstileToken }),
     });
 
     if (response.ok) {
@@ -82,7 +83,7 @@ export function MasukForm() {
             error={errors.password?.message}
             {...register("password")}
           />
-          <TurnstileField />
+          <TurnstileField onToken={(token) => setTurnstileToken(token ?? undefined)} />
           {formError ? (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400">
               {formError}

@@ -2,6 +2,12 @@ import { mapAuthError, maskEmail } from "@/lib/http/auth-errors";
 import { AUTH_RATE_LIMIT, checkRateLimit } from "@/lib/security/ratelimit";
 import { describe, expect, it } from "vitest";
 
+// Env minimal Supabase: ambilRedis mengembalikan null (Upstash tidak
+// dikonfigurasi) sehingga checkRateLimit berperilaku fail-open.
+process.env.NEXT_PUBLIC_SUPABASE_URL ??= "https://contoh.supabase.co";
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= "kunci-anon-uji-yang-cukup-panjang";
+process.env.SUPABASE_SERVICE_ROLE_KEY ??= "kunci-service-uji-yang-cukup-panjang";
+
 describe("mapAuthError", () => {
   it("memetakan kegagalan trigger username", () => {
     const mapped = mapAuthError(new Error("username sudah dipakai"));
@@ -46,8 +52,8 @@ describe("maskEmail", () => {
   });
 });
 
-describe("checkRateLimit (stub F18)", () => {
-  it("selalu lolos dan batas awal sesuai PRD §16", async () => {
+describe("checkRateLimit (F18)", () => {
+  it("fail-open saat Upstash tidak dikonfigurasi, batas awal sesuai PRD §16", async () => {
     const result = await checkRateLimit("masuk:1.2.3.4", AUTH_RATE_LIMIT.max);
     expect(result.success).toBe(true);
     expect(AUTH_RATE_LIMIT.max).toBe(5);

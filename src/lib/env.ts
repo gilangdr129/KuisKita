@@ -15,6 +15,7 @@ const serverEnvSchema = publicEnvSchema.extend({
   CRON_SECRET: z.string().min(8).optional(),
   RESEND_API_KEY: z.string().min(8).optional(),
   EMAIL_FROM: z.string().min(3).optional(),
+  TURNSTILE_SECRET_KEY: z.string().min(4).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -43,6 +44,7 @@ export function getServerEnv(): ServerEnv {
     CRON_SECRET: process.env.CRON_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
+    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
   });
   if (!parsed.success) {
     throw new Error(

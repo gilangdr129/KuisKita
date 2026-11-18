@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { copySessionCookies, fail } from "@/lib/http/response";
+import { denganHeaderKeamanan } from "@/lib/security/headers";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /** Halaman yang butuh login (PRD §7). Publik = sisanya. */
@@ -45,7 +46,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicApiNoSession(pathname)) {
-    return NextResponse.next({ request });
+    return denganHeaderKeamanan(NextResponse.next({ request }));
   }
 
   let sessionResponse: NextResponse;
@@ -69,18 +70,18 @@ export async function proxy(request: NextRequest) {
         "UNAUTHORIZED",
         "Anda harus masuk untuk mengakses sumber daya ini.",
       );
-      return copySessionCookies(unauthorized, sessionResponse);
+      return denganHeaderKeamanan(copySessionCookies(unauthorized, sessionResponse));
     }
 
     if (PROTECTED_PAGES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
       const loginUrl = new URL("/masuk", request.url);
       loginUrl.searchParams.set("next", pathname);
       const redirect = NextResponse.redirect(loginUrl);
-      return copySessionCookies(redirect, sessionResponse);
+      return denganHeaderKeamanan(copySessionCookies(redirect, sessionResponse));
     }
   }
 
-  return sessionResponse;
+  return denganHeaderKeamanan(sessionResponse);
 }
 
 export const config = {

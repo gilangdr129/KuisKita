@@ -1,13 +1,10 @@
 import { fail, ok } from "@/lib/http/response";
 import { mapAuthError } from "@/lib/http/auth-errors";
 import { parseOrFail } from "@/lib/http/validate";
-import { AUTH_RATE_LIMIT, checkRateLimit } from "@/lib/security/ratelimit";
+import { AUTH_RATE_LIMIT, batasi, ipKlien } from "@/lib/security/ratelimit";
+import { verifikasiTurnstile } from "@/lib/security/turnstile";
 import { createUserClient } from "@/lib/supabase/server";
 import { signUpSchema } from "@/lib/validation/schemas";
-
-function clientIp(request: Request) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "ip-tak-dikenal";
-}
 
 function originOf(request: Request) {
   return new URL(request.url).origin;
@@ -15,16 +12,20 @@ function originOf(request: Request) {
 
 /** POST /api/auth/daftar — buat akun baru (email + password + username). */
 export async function POST(request: Request) {
-  const rate = await checkRateLimit(`daftar:${clientIp(request)}`, AUTH_RATE_LIMIT.max);
-  if (!rate.success) {
-    return fail(request, 429, "RATE_LIMITED", rate.reason ?? "Terlalu banyak percobaan. Coba lagi nanti.");
-  }
+  const ip = ipKlien(request);
+  const batas = await batasi(request, `daftar:${ip}`, AUTH_RATE_LIMIT.max);
+  if (batas) return batas;
 
   const parsed = parseOrFail(request, signUpSchema, await request.json().catch(() => null));
   if (!parsed.ok) return parsed.response;
 
   const { email, username, password, turnstile_token } = parsed.data;
-  void turnstile_token; // dipasang penuh di F18
+
+  // Turnstile (F18): wajib & fail-closed bila secret dikonfigurasi.
+  const turnstile = await verifikasiTurnstile(turnstile_token, ip);
+  if (!turnstile.ok) {
+    return fail(request, 400, turnstile.code, turnstile.message);
+  }
 
   const supabase = await createUserClient();
 

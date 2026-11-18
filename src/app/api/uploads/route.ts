@@ -1,4 +1,5 @@
 import { fail, ok } from "@/lib/http/response";
+import { UPLOAD_RATE_LIMIT, batasi } from "@/lib/security/ratelimit";
 import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 import {
   buildStoragePath,
@@ -20,6 +21,10 @@ export async function POST(request: Request) {
   if (!user) {
     return fail(request, 401, "UNAUTHORIZED", "Anda harus masuk untuk mengunggah gambar.");
   }
+
+  // Rate limit: 20 unggahan per jam per pengguna (F18).
+  const batas = await batasi(request, `upload:${user.id}`, UPLOAD_RATE_LIMIT.max, UPLOAD_RATE_LIMIT.windowSeconds);
+  if (batas) return batas;
 
   const form = await request.formData().catch(() => null);
   if (!form) {

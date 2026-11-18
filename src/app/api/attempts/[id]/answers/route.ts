@@ -1,6 +1,7 @@
 import { fail, ok } from "@/lib/http/response";
 import { parseOrFail } from "@/lib/http/validate";
 import { mapRpcError } from "@/lib/attempts/errors";
+import { ANSWERS_RATE_LIMIT, batasi } from "@/lib/security/ratelimit";
 import { attemptIdSchema, saveAnswerSchema } from "@/lib/validation/schemas";
 import { createUserClient, getServiceSupabase } from "@/lib/supabase/server";
 
@@ -32,6 +33,10 @@ export async function PUT(request: Request, { params }: Props) {
   if (!user) {
     return fail(request, 401, "UNAUTHORIZED", "Anda harus masuk untuk menyimpan jawaban.");
   }
+
+  // Rate limit: 60 autosave per menit per pengguna (F18).
+  const batas = await batasi(request, `answers:${user.id}`, ANSWERS_RATE_LIMIT.max);
+  if (batas) return batas;
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase.rpc("save_attempt_answer", {

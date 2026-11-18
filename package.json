@@ -29,6 +29,8 @@
     "e2e:peringkat": "node scripts/auth/e2e-peringkat.mjs",
     "e2e:riwayat": "node scripts/auth/e2e-riwayat.mjs",
     "e2e:admin": "node scripts/auth/e2e-admin.mjs",
+    "e2e:keamanan": "node scripts/auth/e2e-keamanan.mjs",
+    "e2e:turnstile": "node scripts/auth/e2e-turnstile.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {

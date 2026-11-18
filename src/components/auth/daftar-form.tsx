@@ -22,6 +22,7 @@ export function DaftarForm({ next: nextProp }: Props) {
   const nextParam = searchParams.get("next");
   const next = nextProp ?? (nextParam?.startsWith("/") ? nextParam : "/");
   const [formError, setFormError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
 
   const {
     register,
@@ -37,7 +38,7 @@ export function DaftarForm({ next: nextProp }: Props) {
     const response = await fetch("/api/auth/daftar", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ ...values, turnstile_token: turnstileToken }),
     });
 
     if (response.ok) {
@@ -98,7 +99,7 @@ export function DaftarForm({ next: nextProp }: Props) {
             error={errors.konfirmasi?.message}
             {...register("konfirmasi")}
           />
-          <TurnstileField />
+          <TurnstileField onToken={(token) => setTurnstileToken(token ?? undefined)} />
           {formError ? (
             <p role="alert" className="text-sm text-red-600 dark:text-red-400">
               {formError}

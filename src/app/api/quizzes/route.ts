@@ -1,5 +1,6 @@
 import { ok } from "@/lib/http/response";
 import { parseOrFail } from "@/lib/http/validate";
+import { PUBLIC_API_RATE_LIMIT, batasi, ipKlien } from "@/lib/security/ratelimit";
 import { quizFiltersSchema } from "@/lib/validation/schemas";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
@@ -21,6 +22,10 @@ export async function GET(request: Request) {
     },
   );
   if (!parsed.ok) return parsed.response;
+
+  // Rate limit API publik: 100 permintaan per menit per IP (F18, fail-open).
+  const batas = await batasi(request, `publik:${ipKlien(request)}`, PUBLIC_API_RATE_LIMIT.max);
+  if (batas) return batas;
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase.rpc("list_quizzes", {
