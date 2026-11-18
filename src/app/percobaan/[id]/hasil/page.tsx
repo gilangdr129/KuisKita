@@ -129,6 +129,9 @@ export default async function HasilKuisPage({ params }: Props) {
         <Button href={`/kuis/${hasil.attempt.quiz_id}#peringkat`} variant="ghost">
           Papan peringkat
         </Button>
+        <Button href="/riwayat" variant="ghost">
+          Riwayat percobaan
+        </Button>
       </div>
 
       <section className="flex flex-col gap-4">

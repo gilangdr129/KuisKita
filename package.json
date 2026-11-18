@@ -27,6 +27,7 @@
     "e2e:soal": "node scripts/auth/e2e-soal.mjs",
     "e2e:terbit": "node scripts/auth/e2e-terbit.mjs",
     "e2e:peringkat": "node scripts/auth/e2e-peringkat.mjs",
+    "e2e:riwayat": "node scripts/auth/e2e-riwayat.mjs",
     "auth:cleanup": "node scripts/auth/cleanup-users.mjs"
   },
   "dependencies": {

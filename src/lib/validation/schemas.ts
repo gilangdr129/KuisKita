@@ -261,3 +261,16 @@ export const leaderboardQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
   cursor: z.string().max(1000, "Kursor tidak valid").optional(),
 });
+
+// ============================================================
+// Skema riwayat percobaan (F16)
+// ============================================================
+
+export const attemptStatusSchema = z.enum(["in_progress", "submitted", "expired"], {
+  message: "Status harus in_progress, submitted, atau expired",
+});
+
+export const riwayatQuerySchema = z.object({
+  status: attemptStatusSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(50),
+});
