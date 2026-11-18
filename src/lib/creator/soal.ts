@@ -87,6 +87,11 @@ const RPC_ERRORS: Record<
     code: "NOT_FOUND",
     message: "Tautan pratinjau tidak valid atau sudah kedaluwarsa.",
   },
+  ADMIN_REQUIRED: {
+    status: 403,
+    code: "FORBIDDEN",
+    message: "Aksi ini khusus admin.",
+  },
   // F14 — validasi terbit. Pesan spesifik per soal dibawa RPC (pakaiPesanRpc).
   PUBLISH_NO_QUESTIONS: {
     status: 409,

@@ -274,3 +274,22 @@ export const riwayatQuerySchema = z.object({
   status: attemptStatusSchema.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(50),
 });
+
+// ============================================================
+// Skema admin & laporan (F17)
+// ============================================================
+
+/** Alasan opsional saat admin menangguhkan kuis. */
+export const adminSuspendSchema = z.object({
+  alasan: z.string().trim().max(500, "Alasan maksimal 500 karakter").optional(),
+});
+
+/** Laporan pengguna atas sebuah kuis publik. */
+export const laporanSchema = z.object({
+  quiz_id: uuidSchema,
+  alasan: z
+    .string()
+    .trim()
+    .min(3, "Alasan laporan minimal 3 karakter")
+    .max(1000, "Alasan laporan maksimal 1000 karakter"),
+});

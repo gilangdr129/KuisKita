@@ -293,3 +293,40 @@ describe("migrasi F14 (terbit + duplikasi)", () => {
     expect(badan).not.toContain("public.attempts");
   });
 });
+
+describe("migrasi F17 (admin suspend + audit)", () => {
+  const sqlPadat = sql.replace(/\s+/g, "");
+
+  it("punya berkas migrasi admin_suspend + RPC dicabut dari klien", () => {
+    expect(files.some((name) => name.includes("admin_suspend"))).toBe(true);
+    expect(sqlPadat).toContain(
+      "createorreplacefunctionpublic.tangguhkan_kuis_admin(p_admin_iduuid,p_quiz_iduuid,p_alasantextdefaultnull)",
+    );
+    expect(sqlPadat).toContain(
+      "revokeexecuteonfunctionpublic.tangguhkan_kuis_admin(uuid,uuid,text)fromanon,authenticated,public;",
+    );
+  });
+
+  it("memeriksa peran admin dari profiles (bukan auth.uid) & idempoten", () => {
+    const fn = sql.slice(sql.indexOf("function public.tangguhkan_kuis_admin"));
+    const badan = fn.slice(0, fn.indexOf("$$;"));
+    expect(badan).toContain("p.id = p_admin_id and p.role = 'admin'");
+    expect(badan).toContain("raise exception 'ADMIN_REQUIRED'");
+    expect(badan).toContain("raise exception 'QUIZ_NOT_FOUND'");
+    // Idempoten: sudah suspended+private → keluar tanpa audit baru.
+    expect(badan).toContain("v_quiz.status = 'suspended' and v_quiz.visibilitas = 'private'");
+    expect(badan).toContain("'sudah_tangguh', true");
+    expect(badan).toContain("update public.quizzes");
+    expect(badan).toContain("set status = 'suspended'");
+  });
+
+  it("menulis audit_logs dengan actor, aksi, target, data lama/baru, alasan", () => {
+    const fn = sql.slice(sql.indexOf("function public.tangguhkan_kuis_admin"));
+    const badan = fn.slice(0, fn.indexOf("$$;"));
+    expect(badan).toContain("insert into public.audit_logs (actor_id, aksi, target_type, target_id, metadata)");
+    expect(badan).toContain("'quiz.suspend'");
+    expect(badan).toContain("p_admin_id");
+    expect(badan).toContain("jsonb_build_object('status', v_quiz.status, 'visibilitas', v_quiz.visibilitas)");
+    expect(badan).toContain("'alasan', v_alasan");
+  });
+});

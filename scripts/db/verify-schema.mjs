@@ -67,7 +67,8 @@ functions_expected(name) as (
   values ('simpan_soal_kuis'),('simpan_kunci_jawaban'),
          ('buat_token_pratinjau'),('pakai_token_pratinjau'),
          ('guard_question_keys_match'),
-         ('terbitkan_kuis'),('duplikasi_kuis')
+         ('terbitkan_kuis'),('duplikasi_kuis'),
+         ('tangguhkan_kuis_admin')
 )
 select 'tabel:' || name as check_name, to_regclass('public.' || name) is not null as ok
   from tables_expected
@@ -169,6 +170,9 @@ select 'grant: authenticated tanpa execute terbitkan_kuis',
 union all
 select 'grant: authenticated tanpa execute duplikasi_kuis',
        not has_function_privilege('authenticated', 'public.duplikasi_kuis(uuid, uuid)', 'execute')
+union all
+select 'grant: authenticated tanpa execute tangguhkan_kuis_admin',
+       not has_function_privilege('authenticated', 'public.tangguhkan_kuis_admin(uuid, uuid, text)', 'execute')
 union all
 select 'kolom: quizzes.updated_at ada + not null',
        exists (

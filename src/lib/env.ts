@@ -13,6 +13,8 @@ const serverEnvSchema = publicEnvSchema.extend({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   CRON_SECRET: z.string().min(8).optional(),
+  RESEND_API_KEY: z.string().min(8).optional(),
+  EMAIL_FROM: z.string().min(3).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -39,6 +41,8 @@ export function getServerEnv(): ServerEnv {
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     CRON_SECRET: process.env.CRON_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM,
   });
   if (!parsed.success) {
     throw new Error(
